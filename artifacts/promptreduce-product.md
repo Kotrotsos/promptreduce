@@ -16,11 +16,12 @@ Most of an agent's bill is not what you type. Measured over 40 real Claude Code 
 
 promptreduce sits between the client and the API as a proxy on localhost. It parses each request, rewrites the content of tool_result blocks with pure, deterministic transforms, and forwards the rest byte for byte. Because the same content always renders to the same bytes, the API's prompt cache keeps matching across turns.
 
-## Usage
+## Install and use
 
-1. bun install, bun run proxy (port 8788)
-2. export ANTHROPIC_BASE_URL=http://localhost:8788, or set it in Claude Code's settings env block
-3. bun run analyze for your own cost shape and savings per €1,000; bun run extract and bun run eval for the corpus and the eval page (port 8789)
+1. Get the binary: download it from the releases page, or `curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh` (macOS, Linux) or `irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex` (Windows), or build from source with `bun install && bun run build`. Installers need a published release; until then build from source.
+2. `promptreduce setup --all` writes ANTHROPIC_BASE_URL into Claude Code's settings (backup kept) and registers the proxy as a login service (launchd, systemd user unit, Task Scheduler). `--dry-run` shows the changes, `--project` scopes to one project, `--undo` reverts.
+3. Other clients: `export ANTHROPIC_BASE_URL=http://localhost:8788`, or the base URL field in Cursor, Cline, Aider, Continue.
+4. Check: `curl http://localhost:8788/__promptreduce/health`, `promptreduce analyze`, `promptreduce eval` (port 8789), `promptreduce extract`.
 
 ## Benefits
 

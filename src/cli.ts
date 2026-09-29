@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { readFileSync } from 'node:fs';
 import { loadConfig, paths } from './proxy/config.ts';
+import pkg from '../package.json';
 
 const argv = process.argv.slice(2);
 const bare = argv.length === 0;
@@ -60,6 +61,16 @@ switch (cmd) {
     }
     break;
   }
+  case 'setup': {
+    const { runSetup } = await import('./setup.ts');
+    process.exitCode = runSetup(rest);
+    break;
+  }
+  case 'version':
+  case '--version':
+  case '-v':
+    console.log(`promptreduce ${pkg.version}`);
+    break;
   case 'help':
   case '--help':
   case '-h':
@@ -71,6 +82,8 @@ switch (cmd) {
   extract    build the private eval corpus from ~/.claude/projects transcripts
   compress   compress a file or stdin:  promptreduce compress out.txt --kind bash --level 1
   analyze    read your Claude Code transcripts and show what promptreduce would save
+  setup      point Claude Code at the proxy and start the proxy at login:  setup --all [--dry-run] [--undo]
+  version    print the version
              flags: --days 30 | --all, --files 300, --sample 3000, --eur 0.92, --json, --projects <dir>
 
 Environment:

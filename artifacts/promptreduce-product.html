@@ -209,16 +209,24 @@
 
 <section id="usage">
   <div class="wrap">
-    <div class="eyebrow">Usage</div>
-    <h2>Three commands, one variable</h2>
+    <div class="eyebrow">Install and use</div>
+    <h2>Two minutes from download to a smaller bill</h2>
     <div class="steps">
-      <div class="step"><div class="n">1</div><div class="body"><h3>Start the proxy</h3><pre><code>bun install
-bun run proxy        # http://localhost:8788 -> https://api.anthropic.com</code></pre></div></div>
-      <div class="step"><div class="n">2</div><div class="body"><h3>Point a client at it</h3><p>Any client that honors the base URL works. A Claude Code subscription login passes straight through, bearer token and all.</p><pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788
-claude</code></pre><p>Or in Claude Code's settings, per project or globally:</p><pre><code>{ "env": { "ANTHROPIC_BASE_URL": "http://localhost:8788" } }</code></pre></div></div>
-      <div class="step"><div class="n">3</div><div class="body"><h3>See what it does</h3><p>The analyzer reads your own transcripts, prices them at list prices with usage deduplicated per response, and prints your cost shape and the savings per €1,000 for every lever. The extractor builds a private corpus from the same transcripts. The eval page compresses any result in front of you, runs the whole corpus, and shows the proxy's live statistics next to the API's exact usage numbers.</p><pre><code>bun run analyze      # your transcripts: where the money goes, what each lever is worth
-bun run extract      # ~/.promptreduce/corpus, never leaves the machine
-bun run eval         # http://localhost:8789</code></pre></div></div>
+      <div class="step"><div class="n">1</div><div class="body"><h3>Get the binary</h3><p>One self-contained executable per platform, no runtime to install. Download the file for your machine from the releases page and run it, or use the one-line installer, which picks the right file, puts it on your PATH and clears the macOS quarantine flag.</p><pre><code># macOS and Linux
+curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh
+
+# Windows, in PowerShell
+irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex</code></pre><p>From source, with Bun installed, the same binaries build in under ten seconds:</p><pre><code>git clone https://github.com/OWNER/promptreduce && cd promptreduce
+bun install && bun run build      # dist/promptreduce-macos-arm64, -macos-x64, -windows-x64.exe, -linux-x64</code></pre><p>The installers read from the GitHub releases page, so they work once the first release is published; until then, build from source. A downloaded macOS binary that was not installed by the script needs right-click Open once, or <code>xattr -d com.apple.quarantine promptreduce-macos-arm64</code>.</p></div></div>
+      <div class="step"><div class="n">2</div><div class="body"><h3>Point Claude Code at it and keep it running</h3><p>One command writes the base URL into Claude Code's settings and registers the proxy to start at login: a launchd agent on macOS, a systemd user unit on Linux, a Task Scheduler task on Windows. Every change is printed, the settings file is backed up beside itself, and a base URL that already points somewhere else is left alone unless you pass <code>--force</code>.</p><pre><code>promptreduce setup --all              # Claude Code settings plus the login service
+promptreduce setup --all --dry-run    # show the changes, write nothing
+promptreduce setup --claude-code --project   # only this project's .claude/settings.json
+promptreduce setup --undo             # revert everything setup wrote</code></pre></div></div>
+      <div class="step"><div class="n">3</div><div class="body"><h3>Other clients</h3><p>Anything that speaks the Anthropic API and honors the base URL works the same way: the official SDKs read the variable, and Cursor, Cline, Aider and Continue have a base URL field in their Anthropic provider settings.</p><pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788</code></pre></div></div>
+      <div class="step"><div class="n">4</div><div class="body"><h3>Check it, then watch it</h3><p>The health endpoint answers as soon as the proxy is up. The analyzer reads your own transcripts, prices them with usage counted once per response, and prints your cost shape and the savings per €1,000 for every lever, before and after. The eval page compresses any result in front of you and shows the proxy's live statistics next to the API's exact usage numbers.</p><pre><code>curl http://localhost:8788/__promptreduce/health
+promptreduce analyze                  # your transcripts: where the money goes, what each lever is worth
+promptreduce eval                     # http://localhost:8789
+promptreduce extract                  # a private corpus in ~/.promptreduce/corpus, never leaves the machine</code></pre></div></div>
     </div>
   </div>
 </section>
@@ -354,7 +362,7 @@ bun run eval         # http://localhost:8789</code></pre></div></div>
   </div>
 </section>
 
-<footer class="wrap">promptreduce 0.1.0 · sixty-seven tests · verified live with a Claude Code subscription login through the proxy, cache hits intact.</footer>
+<footer class="wrap">promptreduce 0.1.0 · seventy-six tests · verified live with a Claude Code subscription login through the proxy, cache hits intact.</footer>
 
 </body>
 </html>

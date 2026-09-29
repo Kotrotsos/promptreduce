@@ -21,6 +21,32 @@ Two consequences shape the design:
 - **Never churn the prefix.** Prompt caching is prefix based. A result must render to identical bytes on every request that carries it, so every transform is a pure function of the content. No timestamps, no counters, no model calls.
 - **Never rewrite history.** Only the content of `tool_result` blocks changes. `tool_use_id`, `is_error` and `cache_control` are passed through untouched, images and documents are left alone, and error results are never compressed.
 
+## Install
+
+Pick one:
+
+- **Binary.** Download `promptreduce-macos-arm64`, `promptreduce-macos-x64`, `promptreduce-windows-x64.exe` or `promptreduce-linux-x64` from the releases page and run it. Or use the installer, which picks the file, puts it on your PATH and clears the macOS quarantine flag:
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh    # macOS, Linux
+  irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex          # Windows PowerShell
+  ```
+
+  The installers read from GitHub releases, so they work once a release is published. Set `PROMPTREDUCE_REPO=owner/repo` to install from a fork.
+
+- **From source.** With Bun installed: `git clone`, `bun install`, then `bun run build` for the binaries in `dist/`, or run everything through `bun run <command>` as below.
+
+Then let setup do the wiring:
+
+```sh
+promptreduce setup --all              # Claude Code settings + start the proxy at login
+promptreduce setup --all --dry-run    # print the changes, write nothing
+promptreduce setup --claude-code --project   # only ./.claude/settings.json
+promptreduce setup --undo             # revert what setup wrote
+```
+
+`--claude-code` writes `env.ANTHROPIC_BASE_URL` into `~/.claude/settings.json` (a timestamped backup is kept beside it; a foreign base URL is left alone unless you pass `--force`). `--service` registers the proxy as a launchd agent on macOS, a systemd user unit on Linux, or a Task Scheduler logon task on Windows, logging to `~/.promptreduce/proxy.log`. The service runs whatever started setup: the binary itself, or `bun src/cli.ts` when run from source.
+
 ## Quick start
 
 ```sh
