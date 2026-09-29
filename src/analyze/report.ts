@@ -19,7 +19,7 @@ export function renderReport(f: ScanFacts, opts: ReportOptions = {}): string {
   out.push(`promptreduce analyze  |  ${f.projectsDir}`);
   if (!f.calls) { out.push('  no model calls found in the selected transcripts (try --all or --days 365)'); return out.join('\n'); }
   const span = f.firstTs && f.lastTs ? `${f.firstTs.slice(0, 10)} to ${f.lastTs.slice(0, 10)}` : '';
-  out.push(`  ${n(f.sessions)} transcripts${f.days ? ` modified in the last ${f.days} days` : ''} · ${n(f.calls)} model calls | ${span}`);
+  out.push(`  ${n(f.sessions)} transcripts${f.days ? ` modified in the last ${f.days} days` : ''} | ${n(f.calls)} model calls | ${span}`);
   const models = Object.entries(f.callsByModel).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([m, c]) => `${m || 'unknown'} ${pct(c / f.calls)}`).join(' | ');
   out.push(`  models: ${models}`);
   const unknownIds = Object.entries(S.byModel).filter(([, m]) => !m.known).map(([id]) => id || '(empty)');
