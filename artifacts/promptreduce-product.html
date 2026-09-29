@@ -63,7 +63,7 @@
   .step .body { display: grid; gap: 8px; min-width: 0; }
 
   .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 28px; }
-  .benefit { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px; }
+  .benefit { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px; align-content: start; }
   .benefit p { font-size: 0.95rem; color: var(--muted); }
 
   .levels { display: grid; gap: 14px; }
@@ -82,7 +82,7 @@
   .note { font-size: 0.85rem; color: var(--muted); }
 
   .roadmap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 40px; }
-  .item { display: grid; gap: 4px; padding-left: 14px; border-left: 2px solid var(--accent-soft); }
+  .item { display: grid; gap: 4px; align-content: start; padding-left: 14px; border-left: 2px solid var(--accent-soft); }
   .item p { font-size: 0.95rem; color: var(--muted); }
   .when { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 
