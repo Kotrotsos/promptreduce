@@ -12,6 +12,7 @@
     "compress": "bun src/cli.ts compress",
     "analyze": "bun src/cli.ts analyze",
     "build": "bash scripts/build-binaries.sh",
+    "install:local": "sh install.sh",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },
