@@ -3,11 +3,11 @@ import { estimateLevers, pct, fmtK, type Levers } from './levers.ts';
 
 export interface ReportOptions { eurRate?: number }
 
-const money = (usd: number, rate?: number) => rate ? `€${Math.round(usd * rate).toLocaleString('en-US')}` : `$${Math.round(usd).toLocaleString('en-US')}`;
+const money = (usd: number, rate?: number) => rate ? `EUR ${Math.round(usd * rate).toLocaleString('en-US')}` : `$${Math.round(usd).toLocaleString('en-US')}`;
 const n = (x: number) => Math.round(x).toLocaleString('en-US');
 const pad = (s: string, w: number) => (s.length >= w ? s : s + ' '.repeat(w - s.length));
 const rpad = (s: string, w: number) => (s.length >= w ? s : ' '.repeat(w - s.length) + s);
-const unit = (rate?: number) => (rate ? '€' : '$');
+const unit = (rate?: number) => (rate ? 'EUR ' : '$');
 
 export function renderReport(f: ScanFacts, opts: ReportOptions = {}): string {
   const L = estimateLevers(f);
@@ -16,11 +16,11 @@ export function renderReport(f: ScanFacts, opts: ReportOptions = {}): string {
   const h = (s: string) => { out.push(''); out.push(s.toUpperCase()); };
   const row = (label: string, value: string, note = '') => out.push(`  ${pad(label, 30)}${rpad(value, 12)}   ${note}`.trimEnd());
 
-  out.push(`promptreduce analyze  ·  ${f.projectsDir}`);
+  out.push(`promptreduce analyze  |  ${f.projectsDir}`);
   if (!f.calls) { out.push('  no model calls found in the selected transcripts (try --all or --days 365)'); return out.join('\n'); }
   const span = f.firstTs && f.lastTs ? `${f.firstTs.slice(0, 10)} to ${f.lastTs.slice(0, 10)}` : '';
-  out.push(`  ${n(f.sessions)} transcripts${f.days ? ` modified in the last ${f.days} days` : ''} · ${n(f.calls)} model calls · ${span}`);
-  const models = Object.entries(f.callsByModel).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([m, c]) => `${m || 'unknown'} ${pct(c / f.calls)}`).join(' · ');
+  out.push(`  ${n(f.sessions)} transcripts${f.days ? ` modified in the last ${f.days} days` : ''} · ${n(f.calls)} model calls | ${span}`);
+  const models = Object.entries(f.callsByModel).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([m, c]) => `${m || 'unknown'} ${pct(c / f.calls)}`).join(' | ');
   out.push(`  models: ${models}`);
   const unknownIds = Object.entries(S.byModel).filter(([, m]) => !m.known).map(([id]) => id || '(empty)');
   if (unknownIds.length) out.push(`  not in the price table, priced as Opus 5.5: ${unknownIds.join(', ')}`);
@@ -40,7 +40,7 @@ export function renderReport(f: ScanFacts, opts: ReportOptions = {}): string {
 
   h('Context');
   row('average context per call', `${fmtK(f.avgContext)} tokens`);
-  row('session prefix (median)', `${fmtK(L.inputs.prefix)} tokens`, `system prompt plus tool definitions on a cold start, ${pct(L.inputs.prefix / (f.avgContext || 1))} of an average request, ${n(f.prefixSamples.length)} cold starts · ${f.mcpServers.global + f.mcpServers.perProject} MCP servers configured`);
+  row('session prefix (median)', `${fmtK(L.inputs.prefix)} tokens`, `system prompt plus tool definitions on a cold start, ${pct(L.inputs.prefix / (f.avgContext || 1))} of an average request, ${n(f.prefixSamples.length)} cold starts | ${f.mcpServers.global + f.mcpServers.perProject} MCP servers configured`);
   row('tool results', `${pct(L.inputs.trShare)}`, 'of message tokens (the rest: edits and writes, prompts, assistant text)');
   row('long tail', `${pct(f.toolResults.tokens ? f.toolResults.over1k.tokens / f.toolResults.tokens : 0)}`, `of tool-result tokens sit in the ${pct(f.toolResults.n ? f.toolResults.over1k.n / f.toolResults.n : 0)} of results over 1,000 tokens`);
   row('idle gaps over 1h', n(f.idleGapsOver1h), 'each one lets the cache expire');

@@ -86,6 +86,18 @@ PER $1,000 SPENT
   stack of compression, rebuild-guard, effort-medium, tool-slimming: $330 to $515 per $1,000
 ```
 
+## Binaries
+
+One self-contained executable per platform, built from the same TypeScript, no runtime to install:
+
+```sh
+bun run build      # dist/promptreduce-macos-arm64, -macos-x64, -windows-x64.exe, -linux-x64
+```
+
+Double-clicking or running the binary with no arguments runs the analysis (on Windows it waits for Enter before closing); every other command works as `promptreduce proxy`, `promptreduce eval`, `promptreduce compress` and `promptreduce help`. The eval page is embedded, so the binary is the whole product. Sizes are 60 to 120 MB because each one carries the Bun runtime; that is the trade for a single codebase in which the analyzer measures with the exact compressor the proxy runs. A Rust port would be a few megabytes but would need a second implementation of the compressor kept in lockstep, which is the one thing this project must not drift on.
+
+macOS may refuse an unsigned download the first time; `xattr -d com.apple.quarantine promptreduce-macos-arm64` or right-click Open clears it.
+
 Single file from the command line:
 
 ```sh

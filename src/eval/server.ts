@@ -1,4 +1,6 @@
-import { join } from 'node:path';
+import pageImport from './page.html' with { type: 'text' };
+// bun-types declares *.html as an HTMLBundle; with { type: 'text' } the runtime hands us the file's text.
+const page = pageImport as unknown as string;
 import { loadConfig, paths, type Config } from '../proxy/config.ts';
 import { compress, estimateTokens, type Kind, type Level } from '../compress/index.ts';
 import { readAggregate } from '../proxy/stats.ts';
@@ -11,7 +13,6 @@ const asKind = (v: unknown): Kind => (KINDS.includes(v as Kind) ? (v as Kind) : 
 
 export function startEval(cfg: Config = loadConfig()) {
   const p = paths(cfg);
-  const pageFile = join(import.meta.dir, 'page.html');
   const proxyBase = `http://localhost:${cfg.port}`;
   let corpus = loadCorpus(p.corpus);
 
@@ -28,7 +29,7 @@ export function startEval(cfg: Config = loadConfig()) {
       const url = new URL(req.url);
       const path = url.pathname;
       try {
-        if (path === '/' || path === '/index.html') return new Response(Bun.file(pageFile), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+        if (path === '/' || path === '/index.html') return new Response(page, { headers: { 'content-type': 'text/html; charset=utf-8' } });
 
         if (path === '/api/health') {
           let proxy: unknown = null;

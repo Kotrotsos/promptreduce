@@ -2,7 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { loadConfig, paths } from './proxy/config.ts';
 
-const [cmd, ...rest] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const bare = argv.length === 0;
+// Flags with no command (`promptreduce --days 7`) mean analyze; help keeps its own switches.
+const flagsOnly = argv.length > 0 && argv[0].startsWith('-') && !['--help', '-h'].includes(argv[0]);
+const [cmd, ...rest] = bare || flagsOnly ? ['analyze', ...argv] : argv;
 
 function flag(name: string): string | undefined {
   const i = rest.indexOf(`--${name}`);
@@ -50,10 +54,17 @@ switch (cmd) {
     });
     if (rest.includes('--json')) console.log(JSON.stringify(reportJson(facts), null, 1));
     else console.log(renderReport(facts, { eurRate: flag('eur') ? Number(flag('eur')) : undefined }));
+    if (bare) {
+      console.log('\nRun `promptreduce help` for the proxy, the eval page and the other commands.');
+      if (process.platform === 'win32' && process.stdout.isTTY) prompt('Press Enter to close');
+    }
     break;
   }
+  case 'help':
+  case '--help':
+  case '-h':
   default:
-    console.log(`promptreduce <command>
+    console.log(`promptreduce <command>   (no command runs analyze)
 
   proxy      start the compressing proxy   (PROMPTREDUCE_PORT, default 8788)
   eval       start the eval page + API     (PROMPTREDUCE_EVAL_PORT, default 8789)

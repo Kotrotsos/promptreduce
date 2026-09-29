@@ -77,7 +77,7 @@ describe('scan and levers', () => {
     const text = renderReport(facts);
     expect(text).toContain('WHERE THE MONEY GOES');
     expect(text).toContain('PER $1,000 SPENT');
-    expect(renderReport(facts, { eurRate: 0.9 })).toContain('€');
+    expect(renderReport(facts, { eurRate: 0.9 })).toContain('EUR ');
   });
   test('median', () => { expect(median([3, 1, 2])).toBe(2); expect(median([])).toBe(0); expect(median([1, 4])).toBe(3); });
 });

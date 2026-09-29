@@ -4,3 +4,4 @@ bun.lockb
 .DS_Store
 *.log
 .gstack/
+dist/
