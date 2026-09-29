@@ -38,7 +38,9 @@
   .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 900px) { .panes { grid-template-columns: 1fr; } #sample { min-width: 0; max-width: none; width: 100%; } }
   .pane { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; display: flex; flex-direction: column; min-height: 420px; }
-  .pane .h { padding: 7px 10px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+  .pane .h { padding: 7px 10px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; }
+  .pane .h span:first-child { flex: none; }
+  .pane .h span:last-child { text-align: right; word-break: break-word; }
   .pane textarea, .pane pre { flex: 1; margin: 0; padding: 10px; font-family: var(--mono); font-size: 12px; line-height: 1.4; border: 0; resize: none; outline: none; height: 420px; overflow: auto; white-space: pre; background: #fff; color: var(--ink); }
   .pane pre .mark { background: var(--accent-soft); color: var(--accent); }
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
