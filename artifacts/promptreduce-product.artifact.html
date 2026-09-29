@@ -1,0 +1,270 @@
+<title>promptreduce</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: one quiet column of measured sections; the hero pairs a claim with the request path drawn as a diagram. Light only. */
+  :root {
+    --bg: #f7f8f7;
+    --surface: #ffffff;
+    --ink: #16211d;
+    --muted: #5c6b66;
+    --line: #dfe5e2;
+    --accent: #0e6b5c;
+    --accent-soft: #e2f0ec;
+    --accent-ink: #0a4d43;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; padding-block: 0 64px; padding-inline: 20px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.05; }
+  h2 { font-size: 1.55rem; font-weight: 600; line-height: 1.2; }
+  h3 { font-size: 1.05rem; font-weight: 600; }
+  p { margin: 0; max-width: 62ch; }
+  a { color: var(--accent-ink); }
+  code, pre { font-family: var(--mono); font-size: 0.88em; }
+  code { background: var(--accent-soft); color: var(--accent-ink); padding: 1px 5px; border-radius: 4px; }
+  pre { margin: 0; background: var(--ink); color: #e9efec; padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); }
+  section { padding-block: 48px; border-top: 1px solid var(--line); }
+  section > .wrap { display: grid; gap: 22px; }
+  .lede { font-size: 1.12rem; color: var(--muted); }
+
+  .top { padding-block: 26px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
+  .top .meta { font-size: 0.85rem; color: var(--muted); }
+
+  .hero { padding-block: 56px 52px; border-top: 0; }
+  .hero .wrap { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 40px; align-items: center; }
+  .hero-copy { display: grid; gap: 22px; }
+  .hero .lede { font-size: 1.2rem; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .stat { border-top: 2px solid var(--accent); padding-top: 10px; }
+  .stat .v { font-size: 1.9rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .stat .k { font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+  .diagram { min-width: 0; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+
+  .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; }
+  .cols p + p { margin-top: 12px; }
+
+  .steps { display: grid; gap: 18px; counter-reset: step; }
+  .step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .step .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; font-size: 0.85rem; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+  .step .body { display: grid; gap: 8px; min-width: 0; }
+
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 28px; }
+  .benefit { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 6px; }
+  .benefit p { font-size: 0.95rem; color: var(--muted); }
+
+  .levels { display: grid; gap: 14px; }
+  .level { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  .level .name { font-weight: 600; }
+  .level .name small { display: block; font-weight: 400; color: var(--muted); font-size: 0.82rem; }
+  .level p { font-size: 0.95rem; }
+
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  td.strong { font-weight: 600; color: var(--accent-ink); }
+  .note { font-size: 0.85rem; color: var(--muted); }
+
+  .roadmap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 40px; }
+  .item { display: grid; gap: 4px; padding-left: 14px; border-left: 2px solid var(--accent-soft); }
+  .item p { font-size: 0.95rem; color: var(--muted); }
+  .when { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+
+  .limits { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; display: grid; gap: 8px; }
+  .limits p { font-size: 0.95rem; }
+  footer { padding-block: 28px 0; font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); }
+
+  @media (max-width: 820px) {
+    .hero .wrap, .cols, .roadmap { grid-template-columns: 1fr; }
+    .grid3 { grid-template-columns: 1fr 1fr; }
+    .stats { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .level { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    .grid3, .stats { grid-template-columns: 1fr; }
+    body { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .dot { animation: flow 3.2s linear infinite; }
+    .dot.d2 { animation-delay: 1.05s; }
+    .dot.d3 { animation-delay: 2.1s; }
+    @keyframes flow { from { transform: translateX(0); opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } to { transform: translateX(430px); opacity: 0; } }
+  }
+  @media print {
+    body { background: #fff; padding-inline: 0; }
+    section { break-inside: avoid; padding-block: 24px; }
+    pre { background: #f0f0f0; color: #000; border: 1px solid #ccc; }
+    .dot { display: none; }
+  }
+</style>
+
+<div class="wrap top">
+  <div class="brand">promptreduce</div>
+  <div class="meta">Version 0.1.0 · September 2026 · Bun, TypeScript, no runtime dependencies</div>
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy">
+      <div class="eyebrow">Product description</div>
+      <h1>A local proxy that makes every Anthropic client spend fewer tokens.</h1>
+      <p class="lede">Point any client at it with one environment variable. Every tool result in every request is compressed on its way to the API. The client sees nothing different, the model reads less, the bill shrinks.</p>
+      <div class="stats">
+        <div class="stat"><div class="v">24.8%</div><div class="k">of tool-result tokens removed at the default level, on 399 real results</div></div>
+        <div class="stat"><div class="v">32.1%</div><div class="k">at the aggressive level</div></div>
+        <div class="stat"><div class="v">0</div><div class="k">changes to the client, its prompts, or its history</div></div>
+      </div>
+      <pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788</code></pre>
+    </div>
+    <figure class="diagram">
+      <svg viewBox="0 0 520 250" role="img" aria-label="A client sends a request to promptreduce, which compresses tool results, archives the originals, and forwards the request to the Anthropic API">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5c6b66"/></marker>
+        </defs>
+        <rect x="10" y="70" width="120" height="64" rx="8" fill="#ffffff" stroke="#dfe5e2"/>
+        <text x="70" y="97" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="600" fill="#16211d">Your client</text>
+        <text x="70" y="117" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#5c6b66">Claude Code, SDKs, IDEs</text>
+        <rect x="190" y="52" width="150" height="100" rx="8" fill="#e2f0ec" stroke="#0e6b5c"/>
+        <text x="265" y="82" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="700" fill="#0a4d43">promptreduce</text>
+        <text x="265" y="103" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#0a4d43">compresses tool results</text>
+        <text x="265" y="119" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#0a4d43">same bytes every turn</text>
+        <text x="265" y="135" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#0a4d43">fails open</text>
+        <rect x="400" y="70" width="110" height="64" rx="8" fill="#ffffff" stroke="#dfe5e2"/>
+        <text x="455" y="97" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="600" fill="#16211d">Anthropic API</text>
+        <text x="455" y="117" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#5c6b66">prompt cache holds</text>
+        <line x1="130" y1="92" x2="188" y2="92" stroke="#5c6b66" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="188" y1="114" x2="130" y2="114" stroke="#5c6b66" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="340" y1="92" x2="398" y2="92" stroke="#5c6b66" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="398" y1="114" x2="340" y2="114" stroke="#5c6b66" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="159" y="84" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c6b66">request</text>
+        <text x="159" y="128" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c6b66">stream</text>
+        <text x="369" y="84" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c6b66">smaller</text>
+        <text x="369" y="128" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c6b66">untouched</text>
+        <circle class="dot" cx="40" cy="92" r="3.5" fill="#0e6b5c"/>
+        <circle class="dot d2" cx="40" cy="92" r="3.5" fill="#0e6b5c"/>
+        <circle class="dot d3" cx="40" cy="92" r="3.5" fill="#0e6b5c"/>
+        <line x1="265" y1="152" x2="265" y2="196" stroke="#5c6b66" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+        <rect x="165" y="200" width="200" height="40" rx="8" fill="#ffffff" stroke="#dfe5e2"/>
+        <text x="265" y="218" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" font-weight="600" fill="#16211d">Archive on disk</text>
+        <text x="265" y="233" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10.5" fill="#5c6b66">full originals, addressed by content hash</text>
+      </svg>
+      <figcaption>The request path. Only the content of tool results changes; ids, error flags and cache markers pass through as sent.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="description">
+  <div class="wrap">
+    <div class="eyebrow">What it is</div>
+    <h2>Compression where the tokens actually are</h2>
+    <div class="cols">
+      <div>
+        <p>Most of an agent's bill is not what you type. Measured over 40 real Claude Code sessions and 19,311 model calls, 95.4% of billed input volume is context re-sent on every turn, and tool results are 45% of everything that enters a transcript. A typed prompt is 12%, with a median of 31 tokens.</p>
+        <p>A tool result that enters early in a long session is paid for hundreds of times, once per later turn. Shrinking it at the moment it enters is worth far more than shrinking anything the user writes.</p>
+      </div>
+      <div>
+        <p>promptreduce sits between the client and the API as a proxy on localhost. It parses each request, rewrites the content of tool result blocks with pure, deterministic transforms, and forwards the rest byte for byte. Streaming responses pass through untouched while the proxy reads the usage figures on the way by.</p>
+        <p>Because the same content always renders to the same bytes, the API's prompt cache keeps matching across turns. That constraint rules out timestamps, counters and model calls in the transform path, and it is what makes the proxy safe to leave on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="usage">
+  <div class="wrap">
+    <div class="eyebrow">Usage</div>
+    <h2>Three commands, one variable</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div class="body"><h3>Start the proxy</h3><pre><code>bun install
+bun run proxy        # http://localhost:8788 -> https://api.anthropic.com</code></pre></div></div>
+      <div class="step"><div class="n">2</div><div class="body"><h3>Point a client at it</h3><p>Any client that honors the base URL works. A Claude Code subscription login passes straight through, bearer token and all.</p><pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788
+claude</code></pre><p>Or in Claude Code's settings, per project or globally:</p><pre><code>{ "env": { "ANTHROPIC_BASE_URL": "http://localhost:8788" } }</code></pre></div></div>
+      <div class="step"><div class="n">3</div><div class="body"><h3>See what it does</h3><p>The extractor builds a private corpus from your own transcripts. The eval page compresses any result in front of you, runs the whole corpus, and shows the proxy's live statistics next to the API's exact usage numbers.</p><pre><code>bun run extract      # ~/.promptreduce/corpus, never leaves the machine
+bun run eval         # http://localhost:8789</code></pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="levels">
+  <div class="wrap">
+    <div class="eyebrow">How it works</div>
+    <h2>Three levels, chosen per deployment</h2>
+    <div class="levels">
+      <div class="level"><div class="name">Level 0<small>lossless</small></div><p>ANSI escape codes, carriage-return redraws from progress bars, trailing whitespace, runs of blank lines, rows of separators, and consecutive identical lines replaced by one line with a count. Nothing a terminal would have shown is lost.</p></div>
+      <div class="level"><div class="name">Level 1<small>structural, default</small></div><p>JSON is walked deeply: HTML string values such as email bodies become plain text, empty fields are dropped, and the one array of records that dominates a payload is rendered once as a table. Passing test lines collapse to a count, stack frames inside dependencies fold, whitespace-free blobs are cut. Past a line or character budget the head and tail are kept with any line that looks like an error, and a marker names the archived original. A result identical to an earlier one in the same request becomes a one-line pointer.</p></div>
+      <div class="level"><div class="name">Level 2<small>aggressive</small></div><p>Half the budgets, plus column-alignment spaces in shell output collapsed to one.</p></div>
+    </div>
+    <p class="note">File reads are never touched, because their line numbers must survive for later edits. Error results are never touched either.</p>
+  </div>
+</section>
+
+<section id="benefits">
+  <div class="wrap">
+    <div class="eyebrow">Benefits</div>
+    <h2>What you get, and what you keep</h2>
+    <div class="grid3">
+      <div class="benefit"><h3>Works with everything</h3><p>Claude Code, the official SDKs, Cursor, Cline, Aider and Continue all read the same environment variable. One process serves all of them.</p></div>
+      <div class="benefit"><h3>Cache-safe by construction</h3><p>Every transform is a pure function of the content. A result renders to identical bytes on every request that carries it, so cached prefixes keep matching.</p></div>
+      <div class="benefit"><h3>Fails open</h3><p>Any error while rewriting forwards the original request. Other endpoints, including token counting, pass through byte for byte.</p></div>
+      <div class="benefit"><h3>Nothing is lost</h3><p>Truncated results end with the path of the archived original, addressed by content hash. A model that needs the dropped line can read the file.</p></div>
+      <div class="benefit"><h3>Visible savings</h3><p>The eval page shows before and after with exact counts from the API, and the proxy records the usage figures the API returned for every request.</p></div>
+      <div class="benefit"><h3>Private by default</h3><p>Runs on localhost. The corpus built from your transcripts and the archive of originals stay in your home directory and out of the repository.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="measured">
+  <div class="wrap">
+    <div class="eyebrow">Measured</div>
+    <h2>On a real corpus, not a demo</h2>
+    <p class="lede">399 tool results sampled from one machine's Claude Code transcripts, stratified by kind. Local token estimate.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Kind of result</th><th class="n">Samples</th><th class="n">Level 1 saved</th><th>What did the work</th></tr></thead>
+        <tbody>
+          <tr><td>JSON from MCP tools</td><td class="n">84</td><td class="n strong">46%</td><td>HTML bodies to text, empty fields dropped, record tables</td></tr>
+          <tr><td>Outlook messages within that</td><td class="n">32</td><td class="n strong">55%</td><td>single-line JSON carrying HTML email bodies</td></tr>
+          <tr><td>Generic tool results</td><td class="n">45</td><td class="n strong">23%</td><td>budgets, repeated content</td></tr>
+          <tr><td>Shell output</td><td class="n">90</td><td class="n strong">12.5%</td><td>test collapse, ANSI, budgets, JSON minified</td></tr>
+          <tr><td>Web pages and search</td><td class="n">90</td><td class="n strong">6%</td><td>cleanup, budgets</td></tr>
+          <tr><td>File reads</td><td class="n">90</td><td class="n">0%</td><td>untouched by design</td></tr>
+          <tr><td>All samples, level 1</td><td class="n">399</td><td class="n strong">24.8%</td><td></td></tr>
+          <tr><td>All samples, level 2</td><td class="n">399</td><td class="n strong">32.1%</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">For calibration: lossless cleanup alone is worth about 1% of the corpus, and head-and-tail truncation alone about 13% of shell output. Results over 1,000 tokens are 10% of calls but 62% of tool-result tokens, which is why the structural layer targets the long tail. Deduplication is measured live in the proxy, not in the corpus.</p>
+  </div>
+</section>
+
+<section id="future">
+  <div class="wrap">
+    <div class="eyebrow">Potential future</div>
+    <h2>Where the remaining tokens are</h2>
+    <div class="roadmap">
+      <div class="item"><div class="when">Next</div><h3>Model-assisted summarization of very long results</h3><p>A small model extracts what matters from results over a few thousand tokens. Needs a persisted memo keyed by content hash so the summary is the same on every request and the cache holds across restarts.</p></div>
+      <div class="item"><div class="when">Next</div><h3>Eviction of stale results from history</h3><p>A file read that was followed by an edit, a test run from eighty turns ago. Stubbing these attacks the 95% that is cache re-reads. Must be batched so one cache rebuild buys many cheap turns.</p></div>
+      <div class="item"><div class="when">Next</div><h3>Opt-in slimming of tool definitions</h3><p>On a machine with many MCP servers the tool definitions alone run 130k to 270k tokens per request. An explicit allow list per project would be the largest single saving available.</p></div>
+      <div class="item"><div class="when">Later</div><h3>A fidelity eval</h3><p>An LLM judge answers questions from the original and from the compressed result, so every transform ships with a measured answer to "what did the model lose".</p></div>
+      <div class="item"><div class="when">Later</div><h3>OpenAI-compatible endpoint</h3><p>The same treatment for clients that speak the chat completions format, so one proxy covers a mixed toolchain.</p></div>
+      <div class="item"><div class="when">Later</div><h3>Profiles, rules and a CI gate</h3><p>Per-project levels and budgets, custom rules for company-specific tool outputs, a shared dashboard, and a check that fails a change when corpus savings regress below the baseline.</p></div>
+    </div>
+    <div class="limits">
+      <h3>Known limits today</h3>
+      <p>Token numbers inside the proxy are estimates; exact counts come from the API's count_tokens endpoint through the eval page. The tools array and the system prompt are never edited. Summarization and history eviction are not built yet, because both change bytes inside the cached prefix and need a batching policy before they save money instead of costing it.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">promptreduce 0.1.0 · sixty tests · verified live with a Claude Code subscription login through the proxy, cache hits intact.</footer>
