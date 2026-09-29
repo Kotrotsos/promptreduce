@@ -1,0 +1,20 @@
+{
+  "name": "promptreduce",
+  "version": "0.1.0",
+  "description": "Token-reducing proxy for the Anthropic Messages API: deterministic, cache-safe compression of tool results.",
+  "type": "module",
+  "private": true,
+  "bin": { "promptreduce": "./src/cli.ts" },
+  "scripts": {
+    "proxy": "bun src/cli.ts proxy",
+    "eval": "bun src/cli.ts eval",
+    "extract": "bun src/cli.ts extract",
+    "compress": "bun src/cli.ts compress",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.6.0"
+  }
+}

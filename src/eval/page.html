@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>promptreduce eval</title>
+<style>
+  :root {
+    --ink: #1c1c1a; --muted: #6b6b66; --line: #e4e3df; --bg: #ffffff; --panel: #f7f6f3;
+    --accent: #1f5f8b; --accent-soft: #e8f0f6; --good: #1c6e3a; --good-soft: #e6f3ea; --bad: #9b2c2c;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; }
+  main { max-width: 1400px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 20px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; margin: 32px 0 10px; font-weight: 600; }
+  .sub { color: var(--muted); }
+  .status { font-size: 12px; color: var(--muted); }
+  .status b { color: var(--ink); font-weight: 600; }
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+  select, button, input[type=text] { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); }
+  select { min-width: 140px; }
+  #sample { min-width: 360px; max-width: 520px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button:disabled { opacity: .5; cursor: default; }
+  .check { flex-direction: row; align-items: center; gap: 6px; padding-bottom: 7px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin: 14px 0; }
+  .tile { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: #fff; }
+  .tile .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .tile .v { font-size: 22px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .tile .v.good { color: var(--good); }
+  .tile .d { font-size: 12px; color: var(--muted); margin-top: 2px; word-break: break-word; }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .panes { grid-template-columns: 1fr; } #sample { min-width: 0; max-width: none; width: 100%; } }
+  .pane { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; display: flex; flex-direction: column; min-height: 420px; }
+  .pane .h { padding: 7px 10px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+  .pane textarea, .pane pre { flex: 1; margin: 0; padding: 10px; font-family: var(--mono); font-size: 12px; line-height: 1.4; border: 0; resize: none; outline: none; height: 420px; overflow: auto; white-space: pre; background: #fff; color: var(--ink); }
+  .pane pre .mark { background: var(--accent-soft); color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; font-size: 12px; color: var(--muted); }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  .note { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+  .err { color: var(--bad); font-size: 12px; }
+  code { font-family: var(--mono); font-size: 12px; background: var(--panel); padding: 1px 4px; border-radius: 4px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 12px; border: 1px dashed var(--line); border-radius: 8px; }
+  @media print {
+    .controls, button, .no-print { display: none !important; }
+    main { max-width: none; padding: 0; }
+    .pane textarea, .pane pre { height: auto; overflow: visible; white-space: pre-wrap; }
+    .panes { grid-template-columns: 1fr; }
+    body { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>promptreduce eval</h1>
+      <div class="sub">Paste a tool result or pick a real one from your corpus, choose the kind and level, and compare what the model would have seen.</div>
+    </div>
+    <div class="status" id="status">connecting to eval server</div>
+  </header>
+
+  <section class="controls" aria-label="Controls">
+    <label>Corpus sample
+      <select id="sample"><option value="">paste your own text below</option></select>
+    </label>
+    <label>Kind
+      <select id="kind">
+        <option value="bash">bash</option><option value="grep">grep</option><option value="json">json</option>
+        <option value="prose">prose</option><option value="generic">generic</option><option value="read">read (passthrough)</option>
+      </select>
+    </label>
+    <label>Level
+      <select id="level">
+        <option value="0">0 lossless</option><option value="1" selected>1 structural</option><option value="2">2 aggressive</option>
+      </select>
+    </label>
+    <label class="check"><input type="checkbox" id="exact"> exact counts (count_tokens)</label>
+    <button class="primary" id="run">Compress</button>
+    <button id="runCorpus">Run whole corpus</button>
+    <button id="refreshStats">Refresh proxy stats</button>
+  </section>
+
+  <div class="tiles" id="tiles">
+    <div class="tile"><div class="k">Before</div><div class="v" id="tBefore">–</div><div class="d" id="tBeforeD">tokens (estimate)</div></div>
+    <div class="tile"><div class="k">After</div><div class="v" id="tAfter">–</div><div class="d" id="tAfterD">tokens (estimate)</div></div>
+    <div class="tile"><div class="k">Saved</div><div class="v good" id="tSaved">–</div><div class="d" id="tSavedD"></div></div>
+    <div class="tile"><div class="k">Transforms</div><div class="v" id="tTrans" style="font-size:14px;font-weight:500">–</div><div class="d" id="tTransD"></div></div>
+  </div>
+
+  <div class="panes">
+    <div class="pane">
+      <div class="h"><span>Input</span><span id="inMeta"></span></div>
+      <textarea id="input" spellcheck="false" placeholder="Paste a tool result here"></textarea>
+    </div>
+    <div class="pane">
+      <div class="h"><span>Compressed</span><span id="outMeta"></span></div>
+      <pre id="output"></pre>
+    </div>
+  </div>
+  <p class="note">Token numbers are a local estimate unless exact counts are on. Exact counts need an <code>ANTHROPIC_API_KEY</code> on the eval server, or the proxy running with <code>PROMPTREDUCE_COUNT_VIA_PROXY=1</code>. Markers in the output such as <code>[promptreduce: N lines omitted. Full output: path]</code> are what the model sees; the path points at the untouched original.</p>
+
+  <h2>Corpus run</h2>
+  <div id="corpusOut" class="empty">Run the whole corpus to see savings per kind and per tool at the selected level.</div>
+
+  <h2>Proxy</h2>
+  <div id="proxyOut" class="empty">No proxy statistics yet. Start the proxy, point a client at it, and refresh.</div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => (n == null ? '–' : Number(n).toLocaleString('en-US'));
+const pct = (b, a) => (b ? Math.round(1000 * (1 - a / b)) / 10 : 0);
+let health = null;
+
+function esc(s) { return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function highlight(s) { return esc(s).replace(/\[promptreduce:[^\]]*\]|\[table: [^\]]*\]|\[repeated x\d+\]/g, (m) => `<span class="mark">${m}</span>`); }
+
+async function loadHealth() {
+  try {
+    health = await (await fetch('/api/health')).json();
+    const proxy = health.proxy ? `proxy up (level ${health.proxy.level})` : 'proxy not running';
+    $('status').innerHTML = `<b>${health.corpus}</b> corpus samples · ${proxy} · exact counts ${health.exactCounts ? 'available' : 'unavailable'}`;
+    $('exact').disabled = !health.exactCounts;
+  } catch { $('status').textContent = 'eval server unreachable'; }
+}
+
+async function loadCorpus() {
+  const list = await (await fetch('/api/corpus')).json();
+  const sel = $('sample');
+  for (const s of list) {
+    const o = document.createElement('option');
+    o.value = s.id;
+    const p = s.preview ? ` · ${s.preview.slice(0, 48)}` : '';
+    o.textContent = `${s.id} · ${s.tool} · ${fmt(s.tokens)} tok${s.isError ? ' · error' : ''}${p}`;
+    sel.appendChild(o);
+  }
+}
+
+$('sample').addEventListener('change', async (e) => {
+  const id = e.target.value;
+  if (!id) return;
+  const s = await (await fetch(`/api/corpus/${id}`)).json();
+  $('input').value = s.text;
+  $('kind').value = s.kind;
+  $('input').dataset.isError = s.isError ? '1' : '';
+  $('inMeta').textContent = `${s.tool} · ${s.source}`;
+  run();
+});
+
+async function run() {
+  const text = $('input').value;
+  if (!text) return;
+  $('run').disabled = true;
+  try {
+    const body = { text, kind: $('kind').value, level: Number($('level').value), exact: $('exact').checked, isError: $('input').dataset.isError === '1' };
+    const j = await (await fetch('/api/compress', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })).json();
+    const r = j.result;
+    $('output').innerHTML = highlight(r.text);
+    const ex = j.exact;
+    const b = ex ? ex.before : r.before.tokens, a = ex ? ex.after : r.after.tokens;
+    $('tBefore').textContent = fmt(b); $('tAfter').textContent = fmt(a);
+    $('tBeforeD').textContent = ex ? `tokens, ${ex.source}` : `tokens (estimate) · ${fmt(r.before.chars)} chars`;
+    $('tAfterD').textContent = ex ? `tokens, ${ex.model}` : `tokens (estimate) · ${fmt(r.after.chars)} chars`;
+    $('tSaved').textContent = `${pct(b, a)}%`;
+    $('tSavedD').textContent = `${fmt(b - a)} tokens removed`;
+    $('tTrans').textContent = r.transforms.length ? r.transforms.join(', ') : (r.changed ? 'changed' : 'no change');
+    $('tTransD').textContent = `${r.kind}, level ${r.level}` + (j.exactError ? ` · exact count failed: ${j.exactError}` : '');
+    $('outMeta').textContent = `${r.text.split('\n').length} lines`;
+    $('inMeta').textContent = ($('inMeta').textContent.split(' · ').slice(0, 2).join(' · ') || 'pasted') + ` · ${text.split('\n').length} lines`;
+  } finally { $('run').disabled = false; }
+}
+$('run').addEventListener('click', run);
+$('level').addEventListener('change', run);
+$('kind').addEventListener('change', run);
+
+function table(headers, rows) {
+  return `<table><thead><tr>${headers.map((h, i) => `<th class="${i ? 'n' : ''}">${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td class="${i ? 'n' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+async function runCorpus() {
+  $('runCorpus').disabled = true;
+  $('corpusOut').className = ''; $('corpusOut').textContent = 'running';
+  try {
+    const j = await (await fetch('/api/corpus/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ level: Number($('level').value) }) })).json();
+    const rows = (t) => Object.entries(t).sort((a, b) => b[1].before - a[1].before).map(([k, v]) => [k, fmt(v.n), fmt(v.changed), fmt(v.before), fmt(v.after), `${pct(v.before, v.after)}%`]);
+    const tr = Object.entries(j.transforms).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, fmt(v)]);
+    $('corpusOut').innerHTML = `
+      <div class="tiles">
+        <div class="tile"><div class="k">Samples</div><div class="v">${fmt(j.n)}</div><div class="d">level ${j.level}</div></div>
+        <div class="tile"><div class="k">Before</div><div class="v">${fmt(j.before)}</div><div class="d">tokens (estimate)</div></div>
+        <div class="tile"><div class="k">After</div><div class="v">${fmt(j.after)}</div><div class="d">tokens (estimate)</div></div>
+        <div class="tile"><div class="k">Saved</div><div class="v good">${pct(j.before, j.after)}%</div><div class="d">${fmt(j.before - j.after)} tokens</div></div>
+      </div>
+      <div class="grid2">
+        <div><h2 style="margin-top:0">By kind</h2>${table(['kind', 'n', 'changed', 'before', 'after', 'saved'], rows(j.byKind))}</div>
+        <div><h2 style="margin-top:0">By tool</h2>${table(['tool', 'n', 'changed', 'before', 'after', 'saved'], rows(j.byTool))}</div>
+      </div>
+      <div class="grid2" style="margin-top:20px">
+        <div><h2 style="margin-top:0">Transforms applied</h2>${table(['transform', 'samples'], tr)}</div>
+        <div><h2 style="margin-top:0">Largest savings</h2>${table(['sample', 'tool', 'before', 'after', 'saved'], j.top.slice(0, 15).map((s) => [`<a href="#" data-id="${s.id}">${s.id}</a>`, s.tool, fmt(s.before), fmt(s.after), fmt(s.saved)]))}</div>
+      </div>`;
+    $('corpusOut').querySelectorAll('a[data-id]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); $('sample').value = a.dataset.id; $('sample').dispatchEvent(new Event('change')); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+  } catch (e) { $('corpusOut').innerHTML = `<span class="err">${esc(String(e))}</span>`; }
+  finally { $('runCorpus').disabled = false; }
+}
+$('runCorpus').addEventListener('click', runCorpus);
+
+async function loadStats() {
+  try {
+    const j = await (await fetch('/api/stats')).json();
+    const f = j.file;
+    if (!f.requests) { $('proxyOut').className = 'empty'; $('proxyOut').textContent = `No proxy requests recorded yet in ${j.statsFile}.`; return; }
+    const u = f.usage;
+    const ctx = u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens;
+    $('proxyOut').className = '';
+    $('proxyOut').innerHTML = `
+      <div class="tiles">
+        <div class="tile"><div class="k">Requests</div><div class="v">${fmt(f.requests)}</div><div class="d">${f.first ? f.first.slice(0, 16).replace('T', ' ') : ''} to ${f.last ? f.last.slice(0, 16).replace('T', ' ') : ''}</div></div>
+        <div class="tile"><div class="k">Tool results</div><div class="v">${fmt(f.results)}</div><div class="d">${fmt(f.rewritten)} rewritten</div></div>
+        <div class="tile"><div class="k">Removed from requests</div><div class="v good">${fmt(f.tokensRemoved)}</div><div class="d">est tokens, summed over every request that carried them</div></div>
+        <div class="tile"><div class="k">Per-request share</div><div class="v good">${pct(f.tokensBefore, f.tokensAfter)}%</div><div class="d">of tool result tokens</div></div>
+        <div class="tile"><div class="k">Billed input</div><div class="v">${fmt(ctx)}</div><div class="d">${fmt(u.cache_read_input_tokens)} cache read · ${fmt(u.cache_creation_input_tokens)} cache write · ${fmt(u.input_tokens)} fresh</div></div>
+        <div class="tile"><div class="k">Output</div><div class="v">${fmt(u.output_tokens)}</div><div class="d">tokens</div></div>
+      </div>
+      ${table(['tool', 'results', 'rewritten', 'before', 'after', 'saved'], Object.entries(f.byTool).sort((a, b) => b[1].before - a[1].before).map(([k, v]) => [k, fmt(v.n), fmt(v.rewritten), fmt(v.before), fmt(v.after), `${pct(v.before, v.after)}%`]))}
+      <p class="note">Usage columns come from the API responses and are exact. Removal numbers are local estimates. ${j.live ? 'Live proxy reachable.' : 'Live proxy not reachable; showing the stats file.'}</p>`;
+  } catch (e) { $('proxyOut').innerHTML = `<span class="err">${esc(String(e))}</span>`; }
+}
+$('refreshStats').addEventListener('click', loadStats);
+
+loadHealth(); loadCorpus(); loadStats();
+setInterval(loadStats, 15000);
+</script>
+</body>
+</html>
