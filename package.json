@@ -10,6 +10,7 @@
     "eval": "bun src/cli.ts eval",
     "extract": "bun src/cli.ts extract",
     "compress": "bun src/cli.ts compress",
+    "analyze": "bun src/cli.ts analyze",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },

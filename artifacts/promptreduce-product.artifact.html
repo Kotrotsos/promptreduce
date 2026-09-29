@@ -140,9 +140,9 @@
       <h1>A local proxy that makes every Anthropic client spend fewer tokens.</h1>
       <p class="lede">Point any client at it with one environment variable. Every tool result in every request is compressed on its way to the API. The client and its history stay untouched, the model reads less, the bill shrinks.</p>
       <div class="stats">
-        <div class="stat"><div class="v">24.8%</div><div class="k">of tool-result tokens removed at the default level, measured on 399 real results</div></div>
-        <div class="stat"><div class="v">€60 to €80</div><div class="k">back per €1,000 spent, with what is built today (estimate)</div></div>
-        <div class="stat"><div class="v">€350 to €500</div><div class="k">back per €1,000 with the full roadmap (estimate, see the priced levers)</div></div>
+        <div class="stat"><div class="v">10% to 25%</div><div class="k">of tool-result tokens removed at level 1: 10% on a representative sample of 3,000 results, 25% on a corpus weighted to large results</div></div>
+        <div class="stat"><div class="v">€35 to €60</div><div class="k">back per €1,000 spent with what is built today, measured on this machine's transcripts</div></div>
+        <div class="stat"><div class="v">€330 to €500</div><div class="k">back per €1,000 with the next four levers (estimate, see the priced levers)</div></div>
       </div>
       <pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788</code></pre>
     </div>
@@ -209,7 +209,8 @@
 bun run proxy        # http://localhost:8788 -> https://api.anthropic.com</code></pre></div></div>
       <div class="step"><div class="n">2</div><div class="body"><h3>Point a client at it</h3><p>Any client that honors the base URL works. A Claude Code subscription login passes straight through, bearer token and all.</p><pre><code>export ANTHROPIC_BASE_URL=http://localhost:8788
 claude</code></pre><p>Or in Claude Code's settings, per project or globally:</p><pre><code>{ "env": { "ANTHROPIC_BASE_URL": "http://localhost:8788" } }</code></pre></div></div>
-      <div class="step"><div class="n">3</div><div class="body"><h3>See what it does</h3><p>The extractor builds a private corpus from your own transcripts. The eval page compresses any result in front of you, runs the whole corpus, and shows the proxy's live statistics next to the API's exact usage numbers.</p><pre><code>bun run extract      # ~/.promptreduce/corpus, never leaves the machine
+      <div class="step"><div class="n">3</div><div class="body"><h3>See what it does</h3><p>The analyzer reads your own transcripts, prices them at list prices with usage deduplicated per response, and prints your cost shape and the savings per €1,000 for every lever. The extractor builds a private corpus from the same transcripts. The eval page compresses any result in front of you, runs the whole corpus, and shows the proxy's live statistics next to the API's exact usage numbers.</p><pre><code>bun run analyze      # your transcripts: where the money goes, what each lever is worth
+bun run extract      # ~/.promptreduce/corpus, never leaves the machine
 bun run eval         # http://localhost:8789</code></pre></div></div>
     </div>
   </div>
@@ -263,29 +264,29 @@ bun run eval         # http://localhost:8789</code></pre></div></div>
         </tbody>
       </table>
     </div>
-    <p class="note">For calibration: lossless cleanup alone is worth about 1% of the corpus, and head-and-tail truncation alone about 13% of shell output. Results over 1,000 tokens are 10% of calls but 62% of tool-result tokens, which is why the structural layer targets the long tail. Deduplication is measured live in the proxy, not in the corpus.</p>
+    <p class="note">On a representative sample of 3,000 results from the last 30 days on the same machine, where file reads and shell output dominate, level 1 removes 10% and level 2 17%; shell output alone goes 13% and 25%. For calibration: lossless cleanup alone is worth about 1% of the corpus, and head-and-tail truncation alone about 13% of shell output. Results over 1,000 tokens are 10% of calls but 62% of tool-result tokens, which is why the structural layer targets the long tail. Deduplication is measured live in the proxy, not in the corpus.</p>
   </div>
 </section>
 
 <section id="money">
   <div class="wrap">
     <div class="eyebrow">Where the money goes</div>
-    <h2>The bill is mostly cache, and half of the cache is rebuilds</h2>
-    <p class="lede">Forty real Claude Code sessions, 19,487 model calls, priced at Claude Opus 5.5 list prices with the one-hour cache Claude Code uses. Cache writes on that TTL cost twice the input price.</p>
-    <div class="bars" role="img" aria-label="Share of spend by category: cache rebuilds 43 percent, cache reads 32 percent, thinking 12 percent, cache appends 9 percent, fresh input 2 percent, visible output and edits 2 percent">
-      <div class="bar"><div class="label">Cache rebuilds<small>the whole context written again after a break</small></div><div class="track"><div class="fill" style="width:43%"></div></div><div class="val">43%</div></div>
-      <div class="bar"><div class="label">Cache reads<small>context re-read on every turn</small></div><div class="track"><div class="fill" style="width:32%"></div></div><div class="val">32%</div></div>
-      <div class="bar"><div class="label">Thinking<small>reasoning tokens, never shown</small></div><div class="track"><div class="fill" style="width:12%"></div></div><div class="val">12%</div></div>
+    <h2>The bill is mostly cache, and a third of it is rebuilds</h2>
+    <p class="lede">Three hundred Claude Code transcripts from the last 30 days, 11,907 model calls, usage counted once per response and priced at list prices for the models used, with the one-hour cache Claude Code uses. Cache writes on that TTL cost twice the input price. The analyze command prints this for any machine.</p>
+    <div class="bars" role="img" aria-label="Share of spend by category: cache reads 43 percent, cache rebuilds 35 percent, cache appends 9 percent, thinking 7 percent, visible output and edits 5 percent, fresh input 2 percent">
+      <div class="bar"><div class="label">Cache reads<small>context re-read on every turn</small></div><div class="track"><div class="fill" style="width:43%"></div></div><div class="val">43%</div></div>
+      <div class="bar"><div class="label">Cache rebuilds<small>the whole context written again after a break</small></div><div class="track"><div class="fill" style="width:35%"></div></div><div class="val">35%</div></div>
       <div class="bar"><div class="label">Cache appends<small>new content written once</small></div><div class="track"><div class="fill" style="width:9%"></div></div><div class="val">9%</div></div>
+      <div class="bar"><div class="label">Thinking<small>reasoning tokens, never shown</small></div><div class="track"><div class="fill" style="width:7%"></div></div><div class="val">7%</div></div>
+      <div class="bar"><div class="label">Visible output and edits<small>the text you read, the files it writes</small></div><div class="track"><div class="fill" style="width:5%"></div></div><div class="val">5%</div></div>
       <div class="bar"><div class="label">Fresh input<small>uncached tokens</small></div><div class="track"><div class="fill" style="width:2%"></div></div><div class="val">2%</div></div>
-      <div class="bar"><div class="label">Visible output and edits<small>the text you read, the files it writes</small></div><div class="track"><div class="fill" style="width:2%"></div></div><div class="val">2%</div></div>
     </div>
     <div class="cols">
       <div>
-        <p>Rebuilds are the surprise. Of all cache-write tokens, 82% were spent in 687 calls where at least half the context was written again from scratch. A third of those followed an idle gap of more than an hour, when the cache had expired. The rest came from anything that changes the cached prefix mid-session: an MCP server connecting late and enlarging the tool list, a system prompt that shifts, compaction.</p>
+        <p>Rebuilds are the surprise. In 402 calls at least half the context was written again from scratch, and 81% of those rebuild tokens came right after an idle gap of more than an hour, when the cache had expired. The rest came from anything that changes the cached prefix mid-session: an MCP server connecting late and enlarging the tool list, a system prompt that shifts, compaction.</p>
       </div>
       <div>
-        <p>Output is smaller than people expect, and it is not the prose. Visible text and tool inputs account for about 12% of billed output tokens. The other 88% is thinking. So the lever on output is the effort setting, which decides how much the model reasons and how many tool calls it makes, and a verbosity setting is a rounding error next to it.</p>
+        <p>Output is smaller than people expect. Visible text and tool inputs are 5% of the bill and thinking about 7%, so roughly half of billed output tokens are reasoning you never see. The lever on output is the effort setting, which decides how much the model reasons and how many tool calls it makes. A verbosity setting helps you read less more than it helps the bill.</p>
       </div>
     </div>
   </div>
@@ -295,33 +296,33 @@ bun run eval         # http://localhost:8789</code></pre></div></div>
   <div class="wrap">
     <div class="eyebrow">Every lever, priced</div>
     <h2>For every €1,000 you spend</h2>
-    <p class="lede">Each lever is applied to the cost shape above. Numbers marked measured come from this machine or from Anthropic's published runs; the rest are estimates with their assumptions stated. Levers overlap, so the stack multiplies rather than adds.</p>
+    <p class="lede">Each lever is applied to the cost shape above. Numbers marked measured come from this machine's transcripts or from Anthropic's published runs; the rest are estimates with their assumptions stated. Levers overlap, so the stack multiplies rather than adds. Run the analyzer to get the same table for your own usage.</p>
     <div class="callout">
-      <div class="big">€60 to €80 back today. €350 to €500 back with the next four levers.</div>
-      <p>The built proxy removes a quarter of tool-result tokens. Stopping cache rebuilds, running routine work at medium effort, and trimming an oversized tool list are each worth more than that, and they compound.</p>
+      <div class="big">€35 to €60 back today. €330 to €500 back with the next four levers.</div>
+      <p>The built proxy trims tool results. Stopping cache rebuilds, running routine work at medium effort, and trimming the tool list are each worth more than that, and they compound.</p>
     </div>
     <div class="tablewrap">
       <table class="levers">
         <thead><tr><th>Lever</th><th>Status</th><th>What it changes</th><th class="n">Per €1,000</th><th>Basis</th></tr></thead>
         <tbody>
-          <tr><td>Tool-result compression</td><td><span class="tag">built</span></td><td>Removes 24.8% of tool-result tokens at level 1, 32% at level 2, from every later turn's context</td><td class="n strong">€60 to €80</td><td>Measured removal on 399 results; assumes tool results are about 30% of context</td></tr>
-          <tr><td>Result dedupe</td><td><span class="tag">built</span></td><td>A result identical to an earlier one in the same request becomes a one-line pointer, file reads included</td><td class="n strong">€5 to €15</td><td>Identical re-reads were 5% of Read tokens in the sample</td></tr>
-          <tr><td>Cache rebuild guard</td><td><span class="tag plain">next</span></td><td>Pins the tool list and system prompt for a session so late-connecting servers cannot invalidate the prefix, and sends a keep-warm read before the cache expires on an idle session. A read refreshes the timer at 0.05x the input price; a rebuild costs 2x</td><td class="n strong">€170 to €260</td><td>Rebuilds are 43% of the bill here; assumes 40 to 60% of rebuild events are avoidable</td></tr>
+          <tr><td>Tool-result compression</td><td><span class="tag">built</span></td><td>Removes tool-result tokens from every later turn's context: 10% at level 1 and 17% at level 2 on a representative sample, up to 25% and 32% where large structured results dominate</td><td class="n strong">€35 to €60</td><td>Measured by running the compressor on 3,000 of this machine's results; tool results are 47% of message tokens and messages 85% of context</td></tr>
+          <tr><td>Result dedupe</td><td><span class="tag">built</span></td><td>A result identical to an earlier one in the same request becomes a one-line pointer, file reads included</td><td class="n strong">€1 to €2</td><td>Identical repeats were 1% of tool-result tokens on this machine, 5% of file-read tokens in an earlier sample</td></tr>
+          <tr><td>Cache rebuild guard</td><td><span class="tag plain">next</span></td><td>Pins the tool list and system prompt for a session so late-connecting servers cannot invalidate the prefix, and sends a keep-warm read before the cache expires on an idle session. A read refreshes the timer at 0.05x the input price; a rebuild costs 2x</td><td class="n strong">€140 to €210</td><td>Rebuilds are 35% of the bill here and 81% of their tokens follow an idle gap over an hour; assumes 40 to 60% of rebuilds avoidable</td></tr>
           <tr><td>Effort control</td><td><span class="tag plain">next</span></td><td>Sets the effort level per client, project or subagent. Claude Code defaults to xhigh. Medium keeps accuracy and makes fewer, more consolidated tool calls; low is for exploration and subagents</td><td class="n strong">€150 to €300 at medium<br>€330 to €500 at low</td><td>Anthropic's runs: medium matched default accuracy at 70 to 85% of cost per task; low gave up 1 to 3 points for a third to a half off</td></tr>
-          <tr><td>Verbosity setting</td><td><span class="tag plain">next</span></td><td>A cache-safe system message appended per turn: no preamble, no restating the task, no summary unless asked. Shorter answers for you to read, slightly smaller context</td><td class="n strong">€5 to €15</td><td>Visible text is about 11% of output characters and 2% of the bill; assumes a 30 to 50% trim</td></tr>
-          <tr><td>Tool-definition slimming</td><td><span class="tag plain">next</span></td><td>An opt-in allow list per project. Unused MCP tool definitions leave both the cache reads and every rebuild</td><td class="n strong">€50 to €230</td><td>Tool definitions were 130k to 270k tokens per request on this machine; a typical machine carries far less, hence the range</td></tr>
+          <tr><td>Verbosity setting</td><td><span class="tag plain">next</span></td><td>A cache-safe system message appended per turn: no preamble, no restating the task, no summary unless asked. Shorter answers for you to read, slightly smaller context</td><td class="n strong">€15 to €25</td><td>Visible output and edits are 5% of the bill here; assumes a 30 to 50% trim</td></tr>
+          <tr><td>Tool-definition slimming</td><td><span class="tag plain">next</span></td><td>An opt-in allow list per project. Unused MCP tool definitions leave both the cache reads and every rebuild</td><td class="n strong">€55 to €70</td><td>A cold-start prefix is a median 50k tokens here, 15% of an average request, with 15 MCP servers configured, and reached 270k tokens once every server had connected; assumes 60 to 80% of tool definitions unused</td></tr>
           <tr><td>Stale-result eviction</td><td><span class="tag plain">later</span></td><td>Results already acted on, such as a file read that was followed by an edit, are stubbed in batches so one rebuild buys many cheaper turns</td><td class="n strong">€80 to €150</td><td>Estimate for sessions past a hundred turns; assumes 30 to 50% of message tokens are stale by then, net of the rebuild it triggers</td></tr>
-          <tr><td>Long-result summarization</td><td><span class="tag plain">later</span></td><td>A small model condenses results over a few thousand tokens; the summary is memoized by content hash so the cache holds</td><td class="n strong">€60 to €80</td><td>Results over 1,000 tokens are 62% of tool-result tokens; assumes a further 70% reduction on them, net of Haiku cost</td></tr>
+          <tr><td>Long-result summarization</td><td><span class="tag plain">later</span></td><td>A small model condenses results over a few thousand tokens; the summary is memoized by content hash so the cache holds</td><td class="n strong">€90 to €175</td><td>Results over 1,000 tokens are 71% of tool-result tokens here; assumes a further 70% reduction on them, net of the small model's cost</td></tr>
           <tr><td>Model routing for subagents</td><td><span class="tag plain">later</span></td><td>Exploration and bulk work on Sonnet at half the Opus price, while the main thread stays on the strongest model</td><td class="n strong">€125 to €200</td><td>Assumes 25 to 40% of spend is delegable; Anthropic notes the larger model at lower effort often matches a smaller one, so effort comes first</td></tr>
         </tbody>
       </table>
     </div>
     <div class="example">
       <div class="cell"><div class="v">€5,000 a month</div><div class="k">a small team on the API today</div></div>
-      <div class="cell"><div class="v">€300 to €400 a month</div><div class="k">back with the built proxy alone</div></div>
-      <div class="cell"><div class="v">€1,750 to €2,500 a month</div><div class="k">back with the built proxy, the rebuild guard, medium effort and a slimmed tool list</div></div>
+      <div class="cell"><div class="v">€175 to €300 a month</div><div class="k">back with the built proxy alone</div></div>
+      <div class="cell"><div class="v">€1,650 to €2,500 a month</div><div class="k">back with the built proxy, the rebuild guard, medium effort and a slimmed tool list</div></div>
     </div>
-    <p class="note">How the stack is computed: 1 minus the product of what each lever leaves, 0.93 for compression, 0.78 for the rebuild guard, 0.80 for medium effort, 0.95 for slimming on a typical machine, which leaves 55%, so 45% off, rounded to a range. On a subscription plan the same savings show up as headroom under the rate limits rather than as euros. Prices are Opus 5.5 list prices; the shares shift with other models but the ranking of levers does not.</p>
+    <p class="note">How the stack is computed: 1 minus the product of what each lever leaves. At the low ends, 0.97 for compression, 0.86 for the rebuild guard, 0.85 for medium effort and 0.95 for slimming leave 67%, so 33% off; at the high ends 0.94, 0.79, 0.70 and 0.93 leave 48%, so 52% off. On a subscription plan the same savings show up as headroom under the rate limits rather than as euros. Prices are list prices for the models seen, mostly Claude Opus 5; the shares shift with other models but the ranking of levers does not.</p>
   </div>
 </section>
 
@@ -330,12 +331,12 @@ bun run eval         # http://localhost:8789</code></pre></div></div>
     <div class="eyebrow">Potential future</div>
     <h2>What comes next, and what each step is worth</h2>
     <div class="roadmap">
-      <div class="item"><div class="when">Next · €170 to €260 per €1,000</div><h3>Cache rebuild guard</h3><p>Freeze the tool list and system prompt for the life of a session, keep an idle session's cache warm with a cheap read before it expires, and report every rebuild with its cost so the causes become visible.</p></div>
+      <div class="item"><div class="when">Next · €140 to €210 per €1,000</div><h3>Cache rebuild guard</h3><p>Freeze the tool list and system prompt for the life of a session, keep an idle session's cache warm with a cheap read before it expires, and report every rebuild with its cost so the causes become visible.</p></div>
       <div class="item"><div class="when">Next · €150 to €300 per €1,000</div><h3>Effort control</h3><p>Effort per client, per project and per subagent, set at session start or through the per-message channel that does not reset the cache. Medium for routine work, low for exploration, the default kept for the hard parts.</p></div>
-      <div class="item"><div class="when">Next · €5 to €15 per €1,000</div><h3>Verbosity setting</h3><p>A terse, normal or full setting that appends a short system message each turn. Small on the bill, large on how much you have to read.</p></div>
-      <div class="item"><div class="when">Next · €50 to €230 per €1,000</div><h3>Tool-definition slimming</h3><p>An explicit allow list of tools per project. On a machine with many MCP servers the definitions alone are the largest single cost line.</p></div>
+      <div class="item"><div class="when">Next · €15 to €25 per €1,000</div><h3>Verbosity setting</h3><p>A terse, normal or full setting that appends a short system message each turn. Small on the bill, large on how much you have to read.</p></div>
+      <div class="item"><div class="when">Next · €55 to €70 per €1,000</div><h3>Tool-definition slimming</h3><p>An explicit allow list of tools per project. On a machine with many MCP servers the definitions alone are the largest single cost line.</p></div>
       <div class="item"><div class="when">Later · €80 to €150 per €1,000</div><h3>Eviction of stale results from history</h3><p>Stub results that have served their purpose, batched so one cache rebuild buys many cheap turns.</p></div>
-      <div class="item"><div class="when">Later · €60 to €80 per €1,000</div><h3>Long-result summarization</h3><p>A small model condenses the long tail, memoized by content hash so the summary is the same bytes on every request.</p></div>
+      <div class="item"><div class="when">Later · €90 to €175 per €1,000</div><h3>Long-result summarization</h3><p>A small model condenses the long tail, memoized by content hash so the summary is the same bytes on every request.</p></div>
       <div class="item"><div class="when">Later · €125 to €200 per €1,000</div><h3>Model routing for subagents</h3><p>Bulk and exploratory work on a cheaper model while the main thread keeps the strongest one.</p></div>
       <div class="item"><div class="when">Later</div><h3>A fidelity eval, an OpenAI-compatible endpoint, profiles and a CI gate</h3><p>An LLM judge that measures what the model lost for every transform, the same treatment for clients that speak the chat completions format, per-project profiles, and a check that fails a change when corpus savings regress.</p></div>
     </div>
@@ -346,4 +347,4 @@ bun run eval         # http://localhost:8789</code></pre></div></div>
   </div>
 </section>
 
-<footer class="wrap">promptreduce 0.1.0 · sixty tests · verified live with a Claude Code subscription login through the proxy, cache hits intact.</footer>
+<footer class="wrap">promptreduce 0.1.0 · sixty-seven tests · verified live with a Claude Code subscription login through the proxy, cache hits intact.</footer>

@@ -38,6 +38,20 @@ switch (cmd) {
     console.error(`[promptreduce] ${r.kind} L${r.level}: ${r.before.tokens} -> ${r.after.tokens} est tokens (${r.before.tokens ? Math.round(100 * (1 - r.after.tokens / r.before.tokens)) : 0}% saved) ${r.transforms.join(', ') || 'no change'}`);
     break;
   }
+  case 'analyze': {
+    const { scanTranscripts } = await import('./analyze/scan.ts');
+    const { renderReport, reportJson } = await import('./analyze/report.ts');
+    const all = rest.includes('--all');
+    const facts = scanTranscripts({
+      projectsDir: flag('projects'),
+      days: all ? 0 : Number(flag('days') ?? 30),
+      maxFiles: Number(flag('files') ?? 300),
+      sampleResults: Number(flag('sample') ?? 3000),
+    });
+    if (rest.includes('--json')) console.log(JSON.stringify(reportJson(facts), null, 1));
+    else console.log(renderReport(facts, { eurRate: flag('eur') ? Number(flag('eur')) : undefined }));
+    break;
+  }
   default:
     console.log(`promptreduce <command>
 
@@ -45,6 +59,8 @@ switch (cmd) {
   eval       start the eval page + API     (PROMPTREDUCE_EVAL_PORT, default 8789)
   extract    build the private eval corpus from ~/.claude/projects transcripts
   compress   compress a file or stdin:  promptreduce compress out.txt --kind bash --level 1
+  analyze    read your Claude Code transcripts and show what promptreduce would save
+             flags: --days 30 | --all, --files 300, --sample 3000, --eur 0.92, --json, --projects <dir>
 
 Environment:
   PROMPTREDUCE_UPSTREAM            default https://api.anthropic.com

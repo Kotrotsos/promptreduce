@@ -50,6 +50,42 @@ bun run eval             # http://localhost:8789
 
 The page lets you paste any tool result or pick a real one from the corpus, choose the kind and level, and compare before and after with token counts. "Run whole corpus" reports savings per kind and per tool. The proxy panel shows requests seen, tokens removed, and the exact usage numbers the API returned.
 
+Analyze your own setup:
+
+```sh
+bun run analyze                  # transcripts modified in the last 30 days
+bun run analyze -- --all         # everything
+bun run analyze -- --eur 0.92    # totals in euros at that rate
+bun run analyze -- --json        # the facts and the lever estimates as JSON
+```
+
+It reads `~/.claude/projects`, counts each response's usage once (the transcript repeats the usage object on every content-block line, so naive sums overstate the bill two to three times), prices the models seen at list prices with cache writes split by TTL, and prints:
+
+- where the money goes: cache reads, cache rebuilds, cache appends, thinking, visible output, fresh input
+- the cost of cache rebuilds and how many followed an idle gap over an hour
+- your context shape: average request size, cold-start prefix (system prompt plus tool definitions), share of tool results, the long tail
+- what the compressor removes when run on a sample of your own tool results, by tool
+- savings per $1,000 for every lever, built and planned, each with its basis, and the multiplicative stack
+
+Excerpt from this machine, last 30 days:
+
+```
+WHERE THE MONEY GOES  (LIST PRICES, USD)
+  cache reads                   $1,579   43%   context re-read on every turn
+  cache rebuilds                $1,266   35%   402 events, 186 after an idle gap over 1h
+  cache appends                   $329    9%   new content written once
+  thinking                        $243    7%   reasoning tokens, never shown
+  visible output and edits        $181    5%   text you read, files it writes
+  fresh input                      $60    2%   uncached tokens
+
+PER $1,000 SPENT
+  built  Tool-result compression           $34 to $59   measured here
+  next   Cache rebuild guard             $138 to $208   estimate
+  next   Effort control, medium          $150 to $300   Anthropic's runs
+  next   Tool-definition slimming          $54 to $71   estimate
+  stack of compression, rebuild-guard, effort-medium, tool-slimming: $330 to $515 per $1,000
+```
+
 Single file from the command line:
 
 ```sh
@@ -87,7 +123,7 @@ Level 2, aggressive: half the budgets, plus collapsing of inner column-alignment
 | 1 structural | 24.8% |
 | 2 aggressive | 32.1% |
 
-At level 1 by kind: JSON results 46%, generic 23%, Bash 12%, prose 6%, read 0% by design. The single biggest win is Outlook and Gmail messages arriving as single-line JSON with HTML bodies: 55% off. Dedupe is not part of this number since it works across a request, not within one result.
+At level 1 by kind: JSON results 46%, generic 23%, Bash 12%, prose 6%, read 0% by design. That corpus is stratified toward large results; on a representative sample of 3,000 results from the last 30 days on the same machine, where file reads and shell output dominate, level 1 removes 10% and level 2 17% (shell output 13% and 25%). `bun run analyze` reports the representative figure for any machine. The single biggest win is Outlook and Gmail messages arriving as single-line JSON with HTML bodies: 55% off. Dedupe is not part of this number since it works across a request, not within one result.
 
 For calibration: cheap lossless cleanup alone is worth about 2% on Bash output, and head-and-tail truncation alone about 13%. The long tail is where tokens are: results over 1,000 tokens are 10% of calls but 62% of tool-result tokens.
 
@@ -119,6 +155,7 @@ For calibration: cheap lossless cleanup alone is worth about 2% on Bash output, 
 src/compress/   pure, deterministic compressor: layer0 (lossless), layer1 (structural), detect, tokens
 src/proxy/      Bun server, request rewriting, archive, usage capture, stats
 src/eval/       eval server, API and page
+src/analyze/    transcript scanner, pricing, lever estimates, report
 scripts/        corpus extractor
 test/           bun test
 ```

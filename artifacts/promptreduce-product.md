@@ -20,7 +20,7 @@ promptreduce sits between the client and the API as a proxy on localhost. It par
 
 1. bun install, bun run proxy (port 8788)
 2. export ANTHROPIC_BASE_URL=http://localhost:8788, or set it in Claude Code's settings env block
-3. bun run extract and bun run eval for the corpus and the eval page (port 8789)
+3. bun run analyze for your own cost shape and savings per €1,000; bun run extract and bun run eval for the corpus and the eval page (port 8789)
 
 ## Benefits
 
@@ -37,21 +37,21 @@ Level 0 lossless 1.1%, level 1 structural 24.8%, level 2 aggressive 32.1%. By ki
 
 ## Where the money goes
 
-Forty sessions, 19,487 calls, Opus 5.5 list prices, one-hour cache (writes cost 2x input): cache rebuilds 43%, cache reads 32%, thinking 12%, cache appends 9%, fresh input 2%, visible output and edits 2%. 82% of cache-write tokens were full rebuilds (687 calls); a third of those followed an idle gap over an hour. About 88% of billed output tokens are thinking.
+Three hundred transcripts from the last 30 days, 11,907 model calls, usage counted once per response, list prices, one-hour cache (writes cost 2x input): cache reads 43%, cache rebuilds 35%, cache appends 9%, thinking 7%, visible output and edits 5%, fresh input 2%. 402 rebuild calls; 81% of rebuild tokens followed an idle gap over an hour. Roughly half of billed output tokens are thinking. `bun run analyze` prints this for any machine.
 
 ## Every lever, priced (per €1,000 spent)
 
-- Tool-result compression (built): €60 to €80. Measured removal 24.8% to 32%; assumes tool results are about 30% of context.
-- Result dedupe (built): €5 to €15.
-- Cache rebuild guard (next): €170 to €260. Pin tools and system prompt per session; keep-warm read before expiry (read 0.05x vs rebuild 2x). Assumes 40 to 60% of rebuilds avoidable.
-- Effort control (next): €150 to €300 at medium, €330 to €500 at low. Anthropic's runs: medium at 70 to 85% of cost with same accuracy; low a third to a half off for 1 to 3 points.
-- Verbosity setting (next): €5 to €15. Visible text is about 2% of the bill.
-- Tool-definition slimming (next): €50 to €230. 130k to 270k tokens per request on this machine.
+- Tool-result compression (built): €35 to €60. Measured on 3,000 of this machine's results: level 1 removes 10%, level 2 17% (25% and 32% on a corpus weighted to large results).
+- Result dedupe (built): €1 to €2.
+- Cache rebuild guard (next): €140 to €210. Rebuilds are 35% of the bill, 81% of their tokens after idle gaps; assumes 40 to 60% avoidable.
+- Effort control (next): €150 to €300 at medium, €330 to €500 at low. Anthropic's runs.
+- Verbosity setting (next): €15 to €25. Visible output is 5% of the bill.
+- Tool-definition slimming (next): €55 to €70. Cold-start prefix median 50k tokens, 15% of a request, 15 MCP servers.
 - Stale-result eviction (later): €80 to €150, estimate.
-- Long-result summarization (later): €60 to €80 net of Haiku cost, estimate.
+- Long-result summarization (later): €90 to €175, estimate.
 - Model routing for subagents (later): €125 to €200, estimate.
 
-Stack: 1 minus 0.93 x 0.78 x 0.80 x 0.95 leaves 55%, so €350 to €500 back per €1,000. A team at €5,000 a month: €300 to €400 back with the built proxy, €1,750 to €2,500 with the next four levers.
+Stack of the built proxy, rebuild guard, medium effort and slimming: €330 to €500 back per €1,000. A team at €5,000 a month: €175 to €300 back with the built proxy, €1,650 to €2,500 with the next four levers.
 
 ## Potential future
 
