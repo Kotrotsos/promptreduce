@@ -35,6 +35,24 @@ promptreduce sits between the client and the API as a proxy on localhost. It par
 
 Level 0 lossless 1.1%, level 1 structural 24.8%, level 2 aggressive 32.1%. By kind at level 1: JSON from MCP tools 46%, generic 23%, Bash 12.5%, prose 6%, Read 0% by design. Outlook and Gmail messages with HTML bodies: 55%.
 
+## Where the money goes
+
+Forty sessions, 19,487 calls, Opus 5.5 list prices, one-hour cache (writes cost 2x input): cache rebuilds 43%, cache reads 32%, thinking 12%, cache appends 9%, fresh input 2%, visible output and edits 2%. 82% of cache-write tokens were full rebuilds (687 calls); a third of those followed an idle gap over an hour. About 88% of billed output tokens are thinking.
+
+## Every lever, priced (per €1,000 spent)
+
+- Tool-result compression (built): €60 to €80. Measured removal 24.8% to 32%; assumes tool results are about 30% of context.
+- Result dedupe (built): €5 to €15.
+- Cache rebuild guard (next): €170 to €260. Pin tools and system prompt per session; keep-warm read before expiry (read 0.05x vs rebuild 2x). Assumes 40 to 60% of rebuilds avoidable.
+- Effort control (next): €150 to €300 at medium, €330 to €500 at low. Anthropic's runs: medium at 70 to 85% of cost with same accuracy; low a third to a half off for 1 to 3 points.
+- Verbosity setting (next): €5 to €15. Visible text is about 2% of the bill.
+- Tool-definition slimming (next): €50 to €230. 130k to 270k tokens per request on this machine.
+- Stale-result eviction (later): €80 to €150, estimate.
+- Long-result summarization (later): €60 to €80 net of Haiku cost, estimate.
+- Model routing for subagents (later): €125 to €200, estimate.
+
+Stack: 1 minus 0.93 x 0.78 x 0.80 x 0.95 leaves 55%, so €350 to €500 back per €1,000. A team at €5,000 a month: €300 to €400 back with the built proxy, €1,750 to €2,500 with the next four levers.
+
 ## Potential future
 
 - Model-assisted summarization of very long results, with a persisted memo so the cache holds
