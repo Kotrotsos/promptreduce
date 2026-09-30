@@ -79,38 +79,16 @@ The page lets you paste any tool result or pick a real one from the corpus, choo
 Analyze your own setup:
 
 ```sh
-bun run analyze                  # transcripts modified in the last 30 days
-bun run analyze -- --all         # everything
-bun run analyze -- --eur 0.92    # totals in euros at that rate
-bun run analyze -- --json        # the facts and the lever estimates as JSON
+promptreduce analyze                 # short summary in the terminal, full HTML report opened in the browser
+promptreduce analyze --full          # the whole report in the terminal, in color, wrapped to the window
+promptreduce analyze --no-open       # write the HTML report without opening it
+promptreduce analyze --all --eur 0.92   # every transcript, amounts in euros
+promptreduce analyze --json          # the facts and the lever estimates as JSON
 ```
 
-It reads `~/.claude/projects`, counts each response's usage once (the transcript repeats the usage object on every content-block line, so naive sums overstate the bill two to three times), prices the models seen at list prices with cache writes split by TTL, and prints:
+The HTML report is written to `~/.promptreduce/reports/analysis-<date>.html` (or `--html <path>`). Colors follow the terminal and turn off with `--no-color`, `NO_COLOR`, or when output is piped.
 
-- where the money goes: cache reads, cache rebuilds, cache appends, thinking, visible output, fresh input
-- the cost of cache rebuilds and how many followed an idle gap over an hour
-- your context shape: average request size, cold-start prefix (system prompt plus tool definitions), share of tool results, the long tail
-- what the compressor removes when run on a sample of your own tool results, by tool
-- savings per $1,000 for every lever, built and planned, each with its basis, and the multiplicative stack
-
-Excerpt from this machine, last 30 days:
-
-```
-WHERE THE MONEY GOES  (LIST PRICES, USD)
-  cache reads                   $1,579   43%   context re-read on every turn
-  cache rebuilds                $1,266   35%   402 events, 186 after an idle gap over 1h
-  cache appends                   $329    9%   new content written once
-  thinking                        $243    7%   reasoning tokens, never shown
-  visible output and edits        $181    5%   text you read, files it writes
-  fresh input                      $60    2%   uncached tokens
-
-PER $1,000 SPENT
-  built  Tool-result compression           $34 to $59   measured here
-  next   Cache rebuild guard             $138 to $208   estimate
-  next   Effort control, medium          $150 to $300   Anthropic's runs
-  next   Tool-definition slimming          $54 to $71   estimate
-  stack of compression, rebuild-guard, effort-medium, tool-slimming: $330 to $515 per $1,000
-```
+It reads `~/.claude/projects`, counts each response's usage once (the transcript repeats the usage object on every content-block line, so naive sums overstate the bill two to three times), prices the models seen at list prices with cache writes split by TTL, runs the compressor on a sample of your own tool results, and reports where the money goes, your context shape, what promptreduce removes per tool, and savings per $1,000 for every lever with its basis.
 
 ## Binaries
 

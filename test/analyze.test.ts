@@ -6,6 +6,8 @@ import { priceFor, usageFromApi, costOf } from '../src/analyze/pricing.ts';
 import { scanTranscripts } from '../src/analyze/scan.ts';
 import { estimateLevers, median } from '../src/analyze/levers.ts';
 import { renderReport } from '../src/analyze/report.ts';
+import { renderGist, renderFull, wrap } from '../src/analyze/term.ts';
+import { renderHtml } from '../src/analyze/html.ts';
 
 describe('pricing', () => {
   test('maps model ids to families', () => {
@@ -80,4 +82,35 @@ describe('scan and levers', () => {
     expect(renderReport(facts, { eurRate: 0.9 })).toContain('EUR ');
   });
   test('median', () => { expect(median([3, 1, 2])).toBe(2); expect(median([])).toBe(0); expect(median([1, 4])).toBe(3); });
+});
+
+describe('terminal and html rendering', () => {
+  const facts = scanTranscripts({ projectsDir: fixture(), days: 0, sampleResults: 100 });
+  const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
+  test('gist fits the width and carries the headline numbers', () => {
+    const g = renderGist(facts, { color: false, width: 80, htmlPath: '/tmp/r.html' });
+    for (const line of g.split('\n')) expect(line.length).toBeLessThanOrEqual(80);
+    expect(g).toContain('promptreduce today');
+    expect(g).toContain('Full report');
+    expect(g).not.toContain('\x1b[');
+  });
+  test('full report wraps to the width and uses color when asked', () => {
+    const full = renderFull(facts, { color: true, width: 90 });
+    expect(full).toContain('\x1b[');
+    for (const line of strip(full).split('\n')) expect(line.length).toBeLessThanOrEqual(90);
+    expect(strip(full)).toContain('SAVINGS PER $1,000 SPENT');
+  });
+  test('wrap keeps the indent', () => {
+    expect(wrap('aa bb cc dd', 26, '    ')).toEqual(['    aa bb cc dd']);
+    expect(wrap('word '.repeat(20), 30, '  ').every((l) => l.startsWith('  ') && l.length <= 30)).toBe(true);
+  });
+  test('html report is complete and escapes tool names', () => {
+    const h = renderHtml(facts, { generatedAt: new Date('2026-09-30T10:00:00Z') });
+    expect(h.startsWith('<!doctype html>')).toBe(true);
+    expect(h).toContain('Where the money goes');
+    expect(h).toContain('Savings per $1,000 spent');
+    expect(h).toContain('@media print');
+    expect(h).not.toContain('prefers-color-scheme');
+    expect(renderHtml(facts, { eurRate: 0.9 })).toContain('€');
+  });
 });

@@ -1,6 +1,6 @@
 {
   "name": "promptreduce",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Token-reducing proxy for the Anthropic Messages API: deterministic, cache-safe compression of tool results.",
   "type": "module",
   "private": true,

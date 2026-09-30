@@ -38,5 +38,6 @@ export function paths(cfg: Config) {
     corpus: join(cfg.home, 'corpus'),
     stats: join(cfg.home, 'stats.jsonl'),
     requests: join(cfg.home, 'requests'),
+    reports: join(cfg.home, 'reports'),
   };
 }

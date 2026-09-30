@@ -45,7 +45,11 @@ switch (cmd) {
   }
   case 'analyze': {
     const { scanTranscripts } = await import('./analyze/scan.ts');
-    const { renderReport, reportJson } = await import('./analyze/report.ts');
+    const { reportJson } = await import('./analyze/report.ts');
+    const { renderGist, renderFull, detectColor } = await import('./analyze/term.ts');
+    const { renderHtml } = await import('./analyze/html.ts');
+    const { mkdirSync, writeFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
     const all = rest.includes('--all');
     const facts = scanTranscripts({
       projectsDir: flag('projects'),
@@ -53,12 +57,25 @@ switch (cmd) {
       maxFiles: Number(flag('files') ?? 300),
       sampleResults: Number(flag('sample') ?? 3000),
     });
-    if (rest.includes('--json')) console.log(JSON.stringify(reportJson(facts), null, 1));
-    else console.log(renderReport(facts, { eurRate: flag('eur') ? Number(flag('eur')) : undefined }));
-    if (bare) {
-      console.log('\nRun `promptreduce help` for the proxy, the eval page and the other commands.');
-      if (process.platform === 'win32' && process.stdout.isTTY) prompt('Press Enter to close');
+    if (rest.includes('--json')) { console.log(JSON.stringify(reportJson(facts), null, 1)); break; }
+    const eurRate = flag('eur') ? Number(flag('eur')) : undefined;
+    let htmlPath: string | undefined;
+    let opened = false;
+    if (!rest.includes('--no-html') && facts.calls) {
+      htmlPath = flag('html') ?? join(paths(loadConfig()).reports, `analysis-${new Date().toISOString().slice(0, 10)}.html`);
+      try {
+        mkdirSync(join(htmlPath, '..'), { recursive: true });
+        writeFileSync(htmlPath, renderHtml(facts, { eurRate }));
+        if (!rest.includes('--no-open') && process.stdout.isTTY) {
+          const cmd = process.platform === 'darwin' ? ['open', htmlPath] : process.platform === 'win32' ? ['cmd', '/c', 'start', '', htmlPath] : ['xdg-open', htmlPath];
+          try { opened = Bun.spawnSync(cmd, { stdout: 'ignore', stderr: 'ignore' }).exitCode === 0; } catch { opened = false; }
+        }
+      } catch (e) { console.error(`could not write the HTML report: ${(e as Error).message}`); htmlPath = undefined; }
     }
+    const color = rest.includes('--no-color') ? false : detectColor();
+    const text = rest.includes('--full') ? renderFull(facts, { color, eurRate, htmlPath }) : renderGist(facts, { color, eurRate, htmlPath, opened });
+    console.log(text);
+    if (bare && process.platform === 'win32' && process.stdout.isTTY) prompt('\nPress Enter to close');
     break;
   }
   case 'setup': {
