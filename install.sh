@@ -22,12 +22,16 @@ if [ -n "$HERE" ] && [ -f "$HERE/package.json" ] && grep -q '"name": "promptredu
     echo "building $ASSET"
     (cd "$HERE" && bun build --compile --minify --target="bun-$(echo "$ASSET" | sed 's/promptreduce-//; s/macos/darwin/')" src/cli.ts --outfile "dist/$ASSET" >/dev/null)
   fi
+  # Replace, never overwrite in place: macOS kills a signed binary whose file changed under a cached signature.
+  rm -f "$DIR/promptreduce"
   cp "$HERE/dist/$ASSET" "$DIR/promptreduce"
   echo "installed $DIR/promptreduce from $HERE/dist/$ASSET"
 else
   URL="https://github.com/$REPO/releases/latest/download/$ASSET"
   echo "downloading $URL"
-  curl -fsSL "$URL" -o "$DIR/promptreduce"
+  curl -fsSL "$URL" -o "$DIR/promptreduce.download"
+  rm -f "$DIR/promptreduce"
+  mv "$DIR/promptreduce.download" "$DIR/promptreduce"
   echo "installed $DIR/promptreduce"
 fi
 chmod +x "$DIR/promptreduce"
