@@ -1,5 +1,6 @@
 import { loadConfig, paths, type Config } from './config.ts';
 import { makeArchiver } from './archive.ts';
+import { fileKnownIds } from './known.ts';
 import { rewriteRequest, CONTEXT_EDIT_BETA, type RewriteReport } from './rewrite.ts';
 import { teeSseUsage, teeJsonUsage, type Usage } from './usage.ts';
 import { appendRecord, emptyAggregate, addRecord, type Aggregate } from './stats.ts';
@@ -13,6 +14,7 @@ export interface ProxyHandle { server: ReturnType<typeof Bun.serve>; stats: () =
 export function startProxy(cfg: Config = loadConfig()): ProxyHandle {
   const p = paths(cfg);
   const archive = makeArchiver(p.archive);
+  const known = fileKnownIds(p.known);
   const agg = emptyAggregate();
   let lastAuth: Record<string, string> | undefined;
   let recorded = 0;
@@ -57,10 +59,10 @@ export function startProxy(cfg: Config = loadConfig()): ProxyHandle {
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       model = typeof parsed.model === 'string' ? parsed.model : undefined;
       stream = parsed.stream === true;
-      report = rewriteRequest(parsed, { level: cfg.level, archive, contextEdit: cfg.contextEdit });
+      report = rewriteRequest(parsed, { level: cfg.level, archive, contextEdit: cfg.contextEdit, known });
       if (cfg.contextEdit) extraBeta = CONTEXT_EDIT_BETA;
       outBody = JSON.stringify(parsed);
-      log(`rewrite: ${report.rewritten}/${report.results} results, est ${report.tokensBefore} -> ${report.tokensAfter} tokens`);
+      log(`rewrite: ${report.rewritten}/${report.results} results${report.frozen ? `, ${report.frozen} kept as sent` : ''}, est ${report.tokensBefore} -> ${report.tokensAfter} tokens`);
     } catch (e) {
       // Fail open: forward exactly what we received.
       log('rewrite skipped:', (e as Error).message);

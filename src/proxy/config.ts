@@ -39,5 +39,6 @@ export function paths(cfg: Config) {
     stats: join(cfg.home, 'stats.jsonl'),
     requests: join(cfg.home, 'requests'),
     reports: join(cfg.home, 'reports'),
+    known: join(cfg.home, 'known-ids.tsv'),
   };
 }

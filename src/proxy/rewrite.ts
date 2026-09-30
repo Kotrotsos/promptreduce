@@ -1,4 +1,5 @@
 import { compress, kindForTool, estimateTokens, type Level } from '../compress/index.ts';
+import type { KnownIds } from './known.ts';
 
 const DEDUPE_MIN_CHARS = 500;
 
@@ -6,6 +7,8 @@ export interface ToolStat { n: number; rewritten: number; before: number; after:
 export interface RewriteReport {
   results: number;
   rewritten: number;
+  /** Results left byte-for-byte because they were already sent upstream uncompressed. */
+  frozen?: number;
   tokensBefore: number;
   tokensAfter: number;
   byTool: Record<string, ToolStat>;
@@ -17,6 +20,13 @@ export interface RewriteOptions {
   contextEdit?: boolean;
   /** Replace results that repeat an earlier identical result in the same request. Default on. */
   dedupe?: boolean;
+  /**
+   * When set, only results in the newest user message, or results this store
+   * says were compressed before, are touched. Older results pass through
+   * unchanged so switching the proxy on mid-conversation keeps the cache.
+   * Without it every result is compressed (CLI and eval use).
+   */
+  known?: KnownIds;
 }
 
 type Block = Record<string, unknown> & { type?: string };
@@ -54,17 +64,38 @@ export function rewriteRequest(body: Record<string, unknown>, opts: RewriteOptio
     return null;
   };
 
-  for (const m of messages as Array<Record<string, unknown>>) {
-    if (m.role !== 'user' || !Array.isArray(m.content)) continue;
+  let lastUser = -1;
+  (messages as Array<Record<string, unknown>>).forEach((m, i) => { if (m.role === 'user') lastUser = i; });
+
+  (messages as Array<Record<string, unknown>>).forEach((m, mi) => {
+    if (m.role !== 'user' || !Array.isArray(m.content)) return;
     for (const b of m.content as Block[]) {
       if (b.type !== 'tool_result') continue;
       report.results++;
-      const use = toolUses.get(String(b.tool_use_id));
+      const id = String(b.tool_use_id);
+      const use = toolUses.get(id);
       const tool = use?.name ?? 'unknown';
       const kind = kindForTool(use?.name, use?.input);
       const isError = b.is_error === true;
       const stat = (report.byTool[tool] ??= { n: 0, rewritten: 0, before: 0, after: 0 });
       stat.n++;
+
+      let level = opts.level;
+      if (opts.known) {
+        const prior = opts.known.get(id);
+        if (prior !== undefined) level = prior;
+        else if (mi === lastUser) opts.known.add(id, level);
+        else {
+          // Sent upstream before the proxy saw it: keep the exact bytes, but let later duplicates point at it.
+          report.frozen = (report.frozen ?? 0) + 1;
+          const t = textOf(b);
+          if (opts.dedupe !== false && !isError && t && t.length >= DEDUPE_MIN_CHARS) {
+            const key = new Bun.CryptoHasher('sha256').update(t).digest('hex');
+            if (!seen.has(key)) seen.set(key, { id, chars: t.length });
+          }
+          continue;
+        }
+      }
 
       if (opts.dedupe !== false && !isError) {
         const t = textOf(b);
@@ -84,7 +115,7 @@ export function rewriteRequest(body: Record<string, unknown>, opts: RewriteOptio
       }
 
       const apply = (text: string) => {
-        const r = compress(text, { kind, level: opts.level, isError, archive: opts.archive });
+        const r = compress(text, { kind, level, isError, archive: opts.archive });
         report.tokensBefore += r.before.tokens;
         report.tokensAfter += r.after.tokens;
         stat.before += r.before.tokens;
@@ -106,7 +137,7 @@ export function rewriteRequest(body: Record<string, unknown>, opts: RewriteOptio
         if (changed) { report.rewritten++; stat.rewritten++; }
       }
     }
-  }
+  });
 
   if (opts.contextEdit) {
     const cm = (body.context_management ??= { edits: [] }) as { edits?: Array<{ type: string }> };
