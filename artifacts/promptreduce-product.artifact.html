@@ -206,11 +206,11 @@
     <h2>Two minutes from download to a smaller bill</h2>
     <div class="steps">
       <div class="step"><div class="n">1</div><div class="body"><h3>Get the binary</h3><p>One self-contained executable per platform, no runtime to install. Download the file for your machine from the releases page and run it, or use the one-line installer, which picks the right file, puts it on your PATH and clears the macOS quarantine flag.</p><pre><code># macOS and Linux
-curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.sh | sh
 
 # Windows, in PowerShell
-irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex</code></pre><p>From source, with Bun installed, the same binaries build in under ten seconds:</p><pre><code>git clone https://github.com/OWNER/promptreduce && cd promptreduce
-bun install && bun run build      # dist/promptreduce-macos-arm64, -macos-x64, -windows-x64.exe, -linux-x64</code></pre><p>The installers read from the GitHub releases page, so they work once the first release is published; until then, build from source. A downloaded macOS binary that was not installed by the script needs right-click Open once, or <code>xattr -d com.apple.quarantine promptreduce-macos-arm64</code>.</p></div></div>
+irm https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.ps1 | iex</code></pre><p>From source, with Bun installed, the same binaries build in under ten seconds:</p><pre><code>git clone https://github.com/Kotrotsos/promptreduce && cd promptreduce
+bun install && bun run build      # dist/promptreduce-macos-arm64, -macos-x64, -windows-x64.exe, -linux-x64</code></pre><p>A downloaded macOS binary that was not installed by the script needs right-click Open once, or <code>xattr -d com.apple.quarantine promptreduce-macos-arm64</code>.</p></div></div>
       <div class="step"><div class="n">2</div><div class="body"><h3>Point Claude Code at it and keep it running</h3><p>One command writes the base URL into Claude Code's settings and registers the proxy to start at login: a launchd agent on macOS, a systemd user unit on Linux, a Task Scheduler task on Windows. Every change is printed, the settings file is backed up beside itself, and a base URL that already points somewhere else is left alone unless you pass <code>--force</code>.</p><pre><code>promptreduce setup --all              # Claude Code settings plus the login service
 promptreduce setup --all --dry-run    # show the changes, write nothing
 promptreduce setup --claude-code --project   # only this project's .claude/settings.json

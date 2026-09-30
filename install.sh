@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 # Installs the promptreduce binary for macOS or Linux.
 #   From a checkout:   sh install.sh            (uses dist/, builds it first with bun if missing)
-#   From the internet: curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh
+#   From the internet: curl -fsSL https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.sh | sh
 # PROMPTREDUCE_REPO=owner/repo installs a fork's release; PROMPTREDUCE_DIR changes the target directory.
 set -eu
-REPO="${PROMPTREDUCE_REPO:-OWNER/promptreduce}"
+REPO="${PROMPTREDUCE_REPO:-Kotrotsos/promptreduce}"
 DIR="${PROMPTREDUCE_DIR:-$HOME/.local/bin}"
 OS="$(uname -s)"; ARCH="$(uname -m)"
 case "$OS-$ARCH" in
@@ -25,7 +25,6 @@ if [ -n "$HERE" ] && [ -f "$HERE/package.json" ] && grep -q '"name": "promptredu
   cp "$HERE/dist/$ASSET" "$DIR/promptreduce"
   echo "installed $DIR/promptreduce from $HERE/dist/$ASSET"
 else
-  case "$REPO" in OWNER/*) echo "no release published yet: run this script from a checkout, or set PROMPTREDUCE_REPO=owner/repo" >&2; exit 1 ;; esac
   URL="https://github.com/$REPO/releases/latest/download/$ASSET"
   echo "downloading $URL"
   curl -fsSL "$URL" -o "$DIR/promptreduce"

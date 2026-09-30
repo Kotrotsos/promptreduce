@@ -1,6 +1,6 @@
 # Installs the promptreduce binary on Windows from the latest GitHub release.
-#   irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex
-$Repo = if ($env:PROMPTREDUCE_REPO) { $env:PROMPTREDUCE_REPO } else { "OWNER/promptreduce" }
+#   irm https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.ps1 | iex
+$Repo = if ($env:PROMPTREDUCE_REPO) { $env:PROMPTREDUCE_REPO } else { "Kotrotsos/promptreduce" }
 $Dir = if ($env:PROMPTREDUCE_DIR) { $env:PROMPTREDUCE_DIR } else { Join-Path $env:LOCALAPPDATA "promptreduce" }
 $Url = "https://github.com/$Repo/releases/latest/download/promptreduce-windows-x64.exe"
 New-Item -ItemType Directory -Force -Path $Dir | Out-Null
@@ -9,8 +9,6 @@ $Local = Join-Path $PSScriptRoot "dist\promptreduce-windows-x64.exe"
 if ($PSScriptRoot -and (Test-Path $Local)) {
   Copy-Item $Local $Exe -Force
   Write-Host "installed $Exe from $Local"
-} elseif ($Repo -like "OWNER/*") {
-  Write-Error "no release published yet: run this script from a checkout with dist\ built, or set PROMPTREDUCE_REPO=owner/repo"; exit 1
 } else {
   Write-Host "downloading $Url"
   Invoke-WebRequest -Uri $Url -OutFile $Exe

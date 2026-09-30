@@ -28,11 +28,11 @@ Pick one:
 - **Binary.** Download `promptreduce-macos-arm64`, `promptreduce-macos-x64`, `promptreduce-windows-x64.exe` or `promptreduce-linux-x64` from the releases page and run it. Or use the installer, which picks the file, puts it on your PATH and clears the macOS quarantine flag:
 
   ```sh
-  curl -fsSL https://raw.githubusercontent.com/OWNER/promptreduce/main/install.sh | sh    # macOS, Linux
-  irm https://raw.githubusercontent.com/OWNER/promptreduce/main/install.ps1 | iex          # Windows PowerShell
+  curl -fsSL https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.sh | sh    # macOS, Linux
+  irm https://raw.githubusercontent.com/Kotrotsos/promptreduce/main/install.ps1 | iex          # Windows PowerShell
   ```
 
-  The installers read from GitHub releases, so they work once a release is published. Set `PROMPTREDUCE_REPO=owner/repo` to install from a fork.
+  The installers read from GitHub releases. Set `PROMPTREDUCE_REPO=owner/repo` to install from a fork.
 
 - **From source.** With Bun installed: `git clone`, `bun install`, then `bun run build` for the binaries in `dist/`, or run everything through `bun run <command>` as below.
 
