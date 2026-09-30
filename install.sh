@@ -14,7 +14,9 @@ case "$OS-$ARCH" in
   *) echo "no prebuilt binary for $OS $ARCH; build from source with bun run build" >&2; exit 1 ;;
 esac
 mkdir -p "$DIR"
-HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)"
+# Local mode only when run as a file (sh install.sh); piped from curl, $0 is the shell and the current directory says nothing.
+HERE=""
+case "$0" in *install.sh) HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)" ;; esac
 if [ -n "$HERE" ] && [ -f "$HERE/package.json" ] && grep -q '"name": "promptreduce"' "$HERE/package.json"; then
   # Running inside a checkout: install the local build.
   if [ ! -f "$HERE/dist/$ASSET" ]; then
